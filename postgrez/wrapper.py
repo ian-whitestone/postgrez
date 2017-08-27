@@ -3,7 +3,7 @@ from .logger import create_logger
 
 log = create_logger(__name__)
 
-def query(setup, query, query_vars=None, columns=True, many=False):
+def query(setup, query, query_vars=None, columns=True):
     """A wrapper function around Cmd.execute() that returns formatted
     results.
 

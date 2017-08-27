@@ -77,8 +77,16 @@ If you don't want to be embedding the `with ...` code throughout your modules, I
 ```python
 import postgrez
 
+# Run query with variables
+query = 'update my_table set snap_dt=%s where value=%s'
+postgrez.query('my_local_db', query, ('1900-01-01', 5))
+
+# Run query and return formatted resultset
 data = postgrez.query('my_local_db', 'select * from my_table limit 10')
 print (data)
+
+# Create a temporary table, read results from query into pandas dataframe
+import pandas as pd
 
 query = """
 CREATE TEMPORARY TABLE my_temp_table AS (
@@ -89,8 +97,6 @@ CREATE TEMPORARY TABLE my_temp_table AS (
 
 SELECT * FROM my_temp_table;
 """
-
-import pandas as pd
 
 data = postgrez.query('my_local_db', 'select * from my_table limit 10')
 df = pd.DataFrame(data)
