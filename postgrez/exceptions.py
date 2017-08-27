@@ -13,3 +13,14 @@ class PostgrezConfigError(Postgrez):
         ~/.postgrez
     """
     pass
+
+
+class PostgrezConnectionError(Postgrez):
+    """Raised when a function is called that requires a connection, but no
+        connection is present.
+    """
+
+
+class PostgrezExecuteError(Postgrez):
+    """Raised when there is an error running the Cmd.execute() function.
+    """
