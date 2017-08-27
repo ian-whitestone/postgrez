@@ -183,67 +183,23 @@ class Cmd(Connection):
                 as long as query_vars are supplied.
             query_vars (tuple, list or dict): Variables to be executed with query.
                 See http://initd.org/psycopg/docs/usage.html#query-parameters.
-            many (bool): Execute multiple queries
             commit (bool): Commit any pending transaction to the database.
                 Defaults to True.
-            columns (bool): Return column names in results. Defaults to True.
 
-        Returns:
-            results (list): Results from query.
-                Returns None if no resultset was generated (i.e. insert into
-                query, update query etc..).
         Raises:
             PostgrezConnectionError: If no connection has been established.
-            Exception: If an error occurs while parsing the results.
+            PostgrezExecuteError: If any error occurs during execution of query.
         """
-        results = None
         if self._connected() == False:
             raise PostgrezConnectionError('No connection has been established')
+
         log.info('Executing query %s...' % query[0:QUERY_LENGTH].strip())
-        self.cursor.execute(query, vars=query_vars)
-        if commit:
-            self.conn.commit()
-
-        # no way to check if results were returned other than try-except
         try:
-            results = self.cursor.fetchall()
-        except psycopg2.ProgrammingError as e:
-            # this error is raised when there are no results to fetch
-            pass
+            self.cursor.execute(query, vars=query_vars)
 
-        try:
-            if columns and results:
-                cols = [desc[0] for desc in self.cursor.description]
-                results = [{cols[i]:value for i, value in enumerate(result)}
-                            for result in results]
+            if commit:
+                self.conn.commit()
+
         except Exception as e:
-            raise PostgrezExecuteError('Unable to parse results from query %s'
-                '... Error: %s' % (query[0:QUERY_LENGTH].strip(), e))
-
-        return results
-
-    ## TODO: delete? Just discovered psycopg2.cursor.execute() naturally
-    ## handles executing all queries...
-    def execute_many(self, query, columns=True):
-        """Execute many queries. Returns the results from the executed queries.
-
-        Args:
-            query (str): Queries to be executed. Each query is separated by
-                a ';'. Each query must be fully formatted with any variables.
-            columns (bool): Return column names in results. Defaults to True.
-
-        Returns:
-            results (list): Results from executed queries, as a list of lists.
-                Each list is the results associated with that query.
-                Returns None if no results were generated.
-        """
-        if len(query.split(';')) == 1:
-            logger.warning("Only one queried was supplied. Ensure queries are "
-                "separated by ';'s")
-        results = []
-
-        for q in query.split(';'):
-            query_results = self.execute(q, columns=columns)
-            if query_results:
-                results.append(query_results)
-        return results
+            raise PostgrezExecuteError('Unable to execute query %s due to '
+                         'Error: %s' % (query[0:QUERY_LENGTH], e))

@@ -54,20 +54,47 @@ with postgrez.Cmd('my_local_db') as c:
     query = 'update my_table set snap_dt=current_date'
     c.execute(query)
 
+# Pass in variables to format your query
+with postgrez.Cmd('my_local_db') as c:
+    query = 'update my_table set snap_dt=%s where value=%s'
+    c.execute(query, ('1900-01-01', 5))
+
 # Select and retrieve resultset
 with postgrez.Cmd('my_local_db') as c:
     query = 'select * from my_table limit 10'
-    data = c.execute(query)
+    c.execute(query)
+    resultset = c.cursor.fetchall()
+    cols = [desc[0] for desc in c.cursor.description]
 
-print (data)
+    # return the data as a list of dicts [{col1:val1, col2: val2, ..}, ..]
+    results = [{cols[i]:value for i, value in enumerate(row)}
+                        for row in resultset]
+print (results)
 ```
 
 If you don't want to be embedding the `with ...` code throughout your modules, I have provided some wrapper functions to further simplify:
 
 ```python
-data = postgrez.query('my_local_db', 'select * from my_table limit 10')
+import postgrez
 
+data = postgrez.query('my_local_db', 'select * from my_table limit 10')
 print (data)
+
+query = """
+CREATE TEMPORARY TABLE my_temp_table AS (
+  SELECT *
+  FROM my_table
+  WHERE x=5
+);
+
+SELECT * FROM my_temp_table;
+"""
+
+import pandas as pd
+
+data = postgrez.query('my_local_db', 'select * from my_table limit 10')
+df = pd.DataFrame(data)
+df.head()
 ```
 
 ### Resources
