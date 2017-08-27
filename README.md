@@ -21,7 +21,7 @@ my_local_db:
   host: localhost
   user: my_user_name
   port: 5432
-  database: nba
+  database: my_local_db_name
 ```
 
 At the minimum, you must supply a host, user and database. If no port is provided, the default port 5432 will be used.
@@ -79,12 +79,12 @@ If you don't want to be embedding the `with ...` code throughout your modules, I
 ```python
 import postgrez
 
-# Run query with variables
+# Run execute with variables
 query = 'update my_table set snap_dt=%s where value=%s'
-postgrez.query('my_local_db', query, ('1900-01-01', 5))
+postgrez.execute('my_local_db', query, ('1900-01-01', 5))
 
 # Run query and return formatted resultset
-data = postgrez.query('my_local_db', 'select * from my_table limit 10')
+data = postgrez.execute('my_local_db', 'select * from my_table limit 10')
 print (data)
 
 # Create a temporary table, read results from query into pandas dataframe
@@ -100,13 +100,31 @@ CREATE TEMPORARY TABLE my_temp_table AS (
 SELECT * FROM my_temp_table;
 """
 
-data = postgrez.query('my_local_db', 'select * from my_table limit 10')
+data = postgrez.execute('my_local_db', 'select * from my_table limit 10')
 df = pd.DataFrame(data)
 df.head()
 ```
 
 ### Loading Data
-Coming soon...
+postgrez comes with two options for loading: loading from a Python list, or a local file. Both methods utilized the `psycopg2.connection.cursor.copy_from()` method, which is better practice than running a bunch of `INSERT INTO ` statements.
+
+```python
+
+# load Python list into my_table
+data = [(1, 2, 3), (4,5,6)]
+with postgrez.Load('my_local_db') as l:
+    l.load_object('my_table', data)
+
+
+# load csv into my_table
+with postgrez.Load('my_local_db') as l:
+    l.load_file('my_table', 'my_file.csv')
+
+# load other flat file into my_table
+with postgrez.Load('my_local_db') as l:
+    l.load_file('my_table', 'my_file.tsv', '|')
+
+```
 
 ### Exporting Data
 Coming soon...
