@@ -16,7 +16,7 @@ You must also manually add a YAML configuration file named `.postgrez` in your h
 
 postgrez expects the YAML config file, `~/.postgrez` in the following format:
 
-```
+```yml
 my_local_db:
   host: localhost
   user: my_user_name
@@ -28,7 +28,7 @@ At the minimum, you must supply a host, user and database. If no port is provide
 
 You can add additional database setups in your config:
 
-```
+```yml
 my_local_db:
   host: localhost
   user: my_user_name
