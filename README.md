@@ -21,7 +21,7 @@ my_local_db:
   host: localhost
   user: my_user_name
   port: 5432
-  database: nba
+  database: my_local_db_name
 ```
 
 At the minimum, you must supply a host, user and database. If no port is provided, the default port 5432 will be used.
@@ -106,7 +106,7 @@ df.head()
 ```
 
 ### Loading Data
-postgrez comes with two options for loading: loading from a Python list, or a local file.
+postgrez comes with two options for loading: loading from a Python list, or a local file. Both methods utilized the `psycopg2.connection.cursor.copy_from()` method, which is better practice than running a bunch of `INSERT INTO ` statements.
 
 ```python
 
