@@ -1,31 +1,31 @@
-import logging
+"""Utility functions used throughout the postgrez codebase.
+"""
+
+from .logger import create_logger
 import sys
+import yaml
+import os
 
+log = create_logger(__name__)
 
-def create_logger(name=None, log_level='INFO',
-            format='%(asctime)s  - %(module)s - %(levelname)s - %(message)s'):
-    """Create logger
-
+def read_yaml(yaml_file):
+    """Read a yaml file.
     Args:
-        name (str, optional): The name of the logger. Defaults to ``None``
-        log_level (str, optional): The logging level. Defaults to ``INFO``
-            Accepts: DEBUG, INFO, WARNING, ERROR, CRITICAL
-        format (str, optional): Logging format. Defaults to
-            ``%(asctime)s  - %(module)s - %(levelname)s - %(message)s``
+        yaml_file (str): Full path of the yaml file.
 
     Returns:
-        logging.Logger: Logger object, configured with the passed in paramters.
+        data (dict): Dictionary of yaml_file contents.
+            None is returned if an error occurs while reading.
+
+    Raises:
+        Exception: If the yaml_file cannot be opened
     """
-    level_map = {
-        'INFO': logging.INFO,
-        'DEBUG': logging.DEBUG,
-        'WARNING': logging.WARNING,
-        'ERROR': logging.ERROR,
-        'CRITICAL': logging.CRITICAL
-    }
-    log_format = '%(asctime)s  - %(module)s - %(levelname)s - %(message)s'
-    logging.basicConfig(format=log_format,
-        stream=sys.stdout,
-        level=level_map[log_level])
-    log = logging.getLogger(name=name)
-    return log
+    data = None
+    try:
+        with open(yaml_file) as f:
+            # use safe_load instead load
+            data = yaml.safe_load(f)
+    except Exception as e:
+        log.error('Unable to read file %s. Error: %s' % (yaml_file,e))
+
+    return data
