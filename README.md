@@ -44,7 +44,7 @@ aws_db:
 ```
 
 ## Usage
-The main parameter required to initiate all postgrez classes is the setup variable. The setup variable tells postgrez which database setup to use from the ~/.postgrez config file (i.e. my_local_db, aws_db etc.).
+The main parameter required to initiate all postgrez classes is the setup variable. The setup variable tells postgrez which database setup to use from the `~/.postgrez` config file (i.e. my_local_db, aws_db etc.).
 
 ```python
 import postgrez
