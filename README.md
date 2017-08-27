@@ -106,7 +106,25 @@ df.head()
 ```
 
 ### Loading Data
-Coming soon...
+postgrez comes with two options for loading: loading from a Python list, or a local file.
+
+```python
+
+# load Python list into my_table
+data = [(1, 2, 3), (4,5,6)]
+with postgrez.Load('my_local_db') as l:
+    l.load_object('my_table', data)
+
+
+# load csv into my_table
+with postgrez.Load('my_local_db') as l:
+    l.load_file('my_table', 'my_file.csv')
+
+# load other flat file into my_table
+with postgrez.Load('my_local_db') as l:
+    l.load_file('my_table', 'my_file.tsv', '|')
+
+```
 
 ### Exporting Data
 Coming soon...

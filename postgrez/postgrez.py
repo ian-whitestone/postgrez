@@ -3,10 +3,12 @@ Module contains 4 core classes: Connection, Cmd, Export and Load.
 """
 
 import psycopg2
-from .utils import create_logger, read_yaml
-from .exceptions import (Postgrez, PostgrezConfigError)
+from .utils import read_yaml, IteratorFile
+from .exceptions import (PostgrezConfigError, PostgrezConnectionError,
+                            PostgrezExecuteError)
 from .logger import create_logger
 import os
+
 
 log = create_logger(__name__)
 
@@ -154,19 +156,8 @@ class Connection(object):
 
 class Cmd(Connection):
     """Class which handles execution of queries.
-
-    Methods used internally by the class are prefixed with a `_`.
-
-    Attributes:
-        host (str): Database host address
-        port (int): Connection port number (defaults to 5432 if not provided)
-        database (str): Name of the database
-        user (str): Username used to authenticate
-        password (str, optional): Password used to authenticate
-        conn (psycopg2 connection): psycopg2 connection object
-        cursor (psycopg2 cursor): psycopg2 cursor object, associated with
-            the connection object
     """
+
     def __init__(self, setup):
         """Initialize connection to postgres database.
 
@@ -203,3 +194,80 @@ class Cmd(Connection):
         except Exception as e:
             raise PostgrezExecuteError('Unable to execute query %s due to '
                          'Error: %s' % (query[0:QUERY_LENGTH], e))
+
+
+class Load(Connection):
+    """Class which handles loading data functionality.
+    """
+
+    def __init__(self, setup):
+        """Initialize connection to postgres database.
+
+        Args:
+            setup (str): Name of the db setup to use in ~/.postgrez
+        """
+        super(Load, self).__init__(setup)
+
+    def load_object(self, table, data):
+        """Load data into a Postgres table from a python list.
+
+        Args:
+            table (str): name of table to load data into.
+            data (list): list of tuples, where each row is a tuple
+
+        Raises:
+            Exception: If an error occurs while loading.
+        """
+        try:
+            log.info('Attempting to load %s records into table %s' %
+                        (len(data), table))
+
+            table_width = len(data[0])
+            template_string = "|".join(['{}'] * table_width)
+            f = IteratorFile((template_string.format(*x) for x in data))
+            self.cursor.copy_from(f, table, sep="|", null='NULL')
+            self.conn.commit()
+
+        except Exception as e:
+            log.exception("Unable to load data to Postgres due to error: %s"
+                % e)
+            raise
+
+    def load_file(self, table, filename, delimiter=','):
+        """
+        Args:
+            table (str): name of table to load data into.
+            file (str): name of the file
+            delimiter (str): delimiter with which the columns are separated.
+                Defaults to ','
+
+        Raises:
+            Exception: If an error occurs while loading.
+        """
+        try:
+            log.info('Attempting to load file %s  into table %s' %
+                        (filename, table))
+
+            with open(filename, 'r') as f:
+                self.cursor.copy_from(f, table, sep=delimiter, null='NULL')
+                self.conn.commit()
+
+        except Exception as e:
+            log.exception("Unable to load file to Postgres due to error: %s"
+                % e)
+            raise
+            
+class Export(Connection):
+    """Class which handles exporting data.
+    """
+
+    def __init__(self, setup):
+        """Initialize connection to postgres database.
+
+        Args:
+            setup (str): Name of the db setup to use in ~/.postgrez
+        """
+        super(Export, self).__init__(setup)
+
+    def export(self):
+        pass

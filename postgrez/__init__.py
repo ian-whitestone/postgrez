@@ -1,2 +1,2 @@
-from .postgrez import Connection, Cmd
+from .postgrez import Connection, Cmd, Load, Export
 from .wrapper import *
