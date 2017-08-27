@@ -44,6 +44,8 @@ aws_db:
 ```
 
 ## Usage
+
+### Running Queries
 The main parameter required to initiate all postgrez classes is the setup variable. The setup variable tells postgrez which database setup to use from the `~/.postgrez` config file (i.e. my_local_db, aws_db etc.).
 
 ```python
@@ -103,7 +105,13 @@ df = pd.DataFrame(data)
 df.head()
 ```
 
-### Resources
+### Loading Data
+Coming soon...
+
+### Exporting Data
+Coming soon...
+
+## Resources
 * [Docstring convention](http://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html)
 * [giraffez](https://github.com/capitalone/giraffez)
 *
