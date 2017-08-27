@@ -62,6 +62,14 @@ with postgrez.Cmd('my_local_db') as c:
 print (data)
 ```
 
+If you don't want to be embedding the `with ...` code throughout your modules, I have provided some wrapper functions to further simplify:
+
+```python
+data = postgrez.query('my_local_db', 'select * from my_table limit 10')
+
+print (data)
+```
+
 ### Resources
 * [Docstring convention](http://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html)
 * [giraffez](https://github.com/capitalone/giraffez)
