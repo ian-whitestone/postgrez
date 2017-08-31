@@ -129,7 +129,6 @@ class Connection(object):
         log.info('Attempting to disconnect from database %s' % self.database)
         try:
             self.cursor.close()
-            self.conn.close()
         except Exception as e:
             log.error('Error closing cursor. Error: %s', e)
             raise
@@ -256,7 +255,7 @@ class Load(Connection):
             log.exception("Unable to load file to Postgres due to error: %s"
                 % e)
             raise
-            
+
 class Export(Connection):
     """Class which handles exporting data.
     """
