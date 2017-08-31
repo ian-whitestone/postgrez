@@ -129,7 +129,6 @@ class Connection(object):
         log.info('Attempting to disconnect from database %s' % self.database)
         try:
             self.cursor.close()
-            self.conn.close()
         except Exception as e:
             log.error('Error closing cursor. Error: %s', e)
             raise
