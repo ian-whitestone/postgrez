@@ -8,7 +8,9 @@ from .exceptions import (PostgrezConfigError, PostgrezConnectionError,
                             PostgrezExecuteError)
 from .logger import create_logger
 import os
-
+import sys
+import re
+import io
 
 log = create_logger(__name__)
 
@@ -129,6 +131,7 @@ class Connection(object):
         log.info('Attempting to disconnect from database %s' % self.database)
         try:
             self.cursor.close()
+            self.conn.close()
         except Exception as e:
             log.error('Error closing cursor. Error: %s', e)
             raise
@@ -207,7 +210,7 @@ class Load(Connection):
         """
         super(Load, self).__init__(setup)
 
-    def load_object(self, table, data):
+    def load_from_object(self, table, data):
         """Load data into a Postgres table from a python list.
 
         Args:
@@ -232,7 +235,7 @@ class Load(Connection):
                 % e)
             raise
 
-    def load_file(self, table_name, filename, delimiter=','):
+    def load_from_file(self, table_name, filename, delimiter=','):
         """
         Args:
             table_name (str): name of table to load data into.
@@ -268,13 +271,122 @@ class Export(Connection):
         """
         super(Export, self).__init__(setup)
 
-    def export(self):
-        query = """
-        select *
-        from tickets
-        where infraction_code=15
-        and location2='393 UNIVERSITY AVE'
-        and infraction_date='2008-01-02'
+    def _build_copy_query(self, sql, columns=None, delimiter=',', header=True):
+        """Build query used in the cursor.copy_expert() method.
+
+        Args:
+            sql (str): A select query or a table
+            columns (list): List of column names to export. columns should only
+                be provided if you are exporting a table
+                (i.e. sql = 'table_name'). If sql is a query to export, desired
+                columns should be specified in the select portion of that query
+                (i.e. sql = 'select col1, col2 from ...'). Defaults to None.
+            delimiter (str): Delimiter to separate columns with. Defaults to ','.
+            header (boolean): Specify True to return the column names. Defaults
+                to True.
+
+        Returns:
+            query (str): Formatted query to run in copy_expert()
+
+        Raises:
+            Exception: If an error occurs while building hte query.
+        """
+        try:
+            if columns:
+                columns = '(' + ','.join(columns) + ')'
+
+            ## check if provided sql is a query, or just a table name
+            if re.match('\s*select', sql, re.IGNORECASE):
+                if columns:
+                    log.warning('If a query is passed in the sql arg '
+                                'instead of a tablename, columns must be '
+                                'specified in the query itself')
+                    columns = ''
+                query = "COPY ({0}) {1} TO STDOUT WITH DELIMITER '{2}' CSV {3}"
+            else:
+                query = "COPY {0} {1} TO STDOUT WITH DELIMITER '{2}' CSV {3}"
+
+            query = query.format(
+                sql,
+                columns,
+                delimiter,
+                ('HEADER' if header else '')
+                )
+            return query
+        except Exception as e:
+            log.error('Unable to build query. Error: %s' % (e))
+            raise
+
+    def export_to_file(self, sql, filename, columns=None, delimiter=',',
+                header=True):
+        """Export records from a table or query to a local file.
+
+        Args:
+            sql (str): A select query or a table
+            columns (list): List of column names to export. columns should only
+                be provided if you are exporting a table
+                (i.e. sql = 'table_name'). If sql is a query to export, desired
+                columns should be specified in the select portion of that query
+                (i.e. sql = 'select col1, col2 from ...'). Defaults to None.
+            filename (str): Filename to copy to.
+            delimiter (str): Delimiter to separate columns with. Defaults to ','.
+            header (boolean): Specify True to return the column names. Defaults
+                to True.
+
+        Raises:
+            Exception: If an error occurs while exporting to the file.
         """
 
-        
+        query = self._build_copy_query(sql, columns, delimiter, header)
+        try:
+            log.info('Running copy_expert with\n%s\nOutputting results to %s' %
+                        (query, filename))
+            with open(filename, 'w') as f:
+                self.cursor.copy_expert(query, f)
+        except Exception as e:
+            log.error('Unable to export to file %s. Error: %s' % (filename, e))
+            raise
+
+
+    def export_to_object(self, sql, columns=None, delimiter=',', header=True):
+        """Export records from a table or query to a local file.
+
+        Args:
+            sql (str): A select query or a table
+            columns (list): List of column names to export. columns should only
+                be provided if you are exporting a table
+                (i.e. sql = 'table_name'). If sql is a query to export, desired
+                columns should be specified in the select portion of that query
+                (i.e. sql = 'select col1, col2 from ...'). Defaults to None.
+            delimiter (str): Delimiter to separate columns with. Defaults to ','.
+            header (boolean): Specify True to return the column names. Defaults
+                to True.
+
+        Returns:
+            data (list): If header is True, returns list of dicts where each
+                dict is in the format {col1: val1, col2:val2, ...}. Otherwise,
+                returns a list of lists where each list is [val1, val2, ...].
+
+        Raises:
+            Exception: If an error occurs while exporting to an object.
+        """
+
+        query = self._build_copy_query(sql, columns, delimiter, header)
+        data = None
+        try:
+            log.info('Running copy_expert with \n%s' % (query))
+            text_stream = io.StringIO()
+            self.cursor.copy_expert(query, text_stream)
+            output = text_stream.getvalue()
+            output = output.split('\n')
+            cols = output[0].split(delimiter)
+            if header:
+                data = [{cols[i]:value for i, value in
+                            enumerate(row.split(delimiter))}
+                            for row in output[1:-1]]
+            else:
+                data = [row.split(delimiter) for row in output[1:-1]]
+        except Exception as e:
+            log.error('Unable to export to object. Error: %s' % (e))
+            raise
+        return data

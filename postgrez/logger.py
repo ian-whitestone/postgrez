@@ -25,9 +25,13 @@ def create_logger(name=None, log_level='INFO',
         'ERROR': logging.ERROR,
         'CRITICAL': logging.CRITICAL
     }
-    logging.basicConfig(format=log_format,
-        stream=sys.stdout,
-        filename=log_filename, ## if filename=None, then it will stream to your terminal
-        level=level_map[log_level])
+    if log_filename:
+        logging.basicConfig(format=log_format,
+            filename=log_filename,
+            level=level_map[log_level])
+    else:
+        logging.basicConfig(format=log_format,
+            stream=sys.stdout,
+            level=level_map[log_level])
     log = logging.getLogger(name=name)
     return log

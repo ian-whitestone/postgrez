@@ -106,7 +106,8 @@ df.head()
 ```
 
 ### Loading Data
-postgrez comes with two options for loading: loading from a Python list, or a local file. Both methods utilized the `psycopg2.connection.cursor.copy_from()` method, which is better practice than running a bunch of `INSERT INTO ` statements.
+postgrez comes with two options for loading: loading from a Python list, or a local file. Both methods utilized the `psycopg2.connection.cursor.copy_from()` method, which is better practice than running a bunch of `INSERT INTO ` statements, see
+[here](https://www.postgresql.org/docs/current/static/populate.html) and [here](https://www.depesz.com/2007/07/05/how-to-insert-data-to-database-as-fast-as-possible/).
 
 ```python
 
@@ -127,7 +128,7 @@ with postgrez.Load('my_local_db') as l:
 ```
 
 ### Exporting Data
-Coming soon...
+Exporting records from a table or query is accomplished with the `psycopg2.connection.cursor.copy_expert()` method, due to it's flexibility over the `copy_to()` method.
 
 ## Resources
 * [Docstring convention](http://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html)

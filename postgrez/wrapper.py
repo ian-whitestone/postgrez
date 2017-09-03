@@ -1,9 +1,9 @@
-from .postgrez import Connection, Cmd, QUERY_LENGTH
+from .postgrez import Connection, Cmd, Load, Export, QUERY_LENGTH
 from .logger import create_logger
 
 log = create_logger(__name__)
 
-def query(setup, query, query_vars=None, columns=True):
+def execute(setup, query, query_vars=None, columns=True):
     """A wrapper function around Cmd.execute() that returns formatted
     results.
 
@@ -14,6 +14,7 @@ def query(setup, query, query_vars=None, columns=True):
         query (str): Query to be executed. Query can contain placeholders,
             as long as query_vars are supplied.
         columns (bool): Return column names in results. Defaults to True.
+
     Returns:
         results (list): Results from query.
             Returns None if no resultset was generated (i.e. insert into
