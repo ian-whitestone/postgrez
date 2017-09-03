@@ -25,6 +25,7 @@ def create_logger(name=None, log_level='INFO',
         'ERROR': logging.ERROR,
         'CRITICAL': logging.CRITICAL
     }
+
     if log_filename:
         logging.basicConfig(format=log_format,
             filename=log_filename,
@@ -33,5 +34,6 @@ def create_logger(name=None, log_level='INFO',
         logging.basicConfig(format=log_format,
             stream=sys.stdout,
             level=level_map[log_level])
+
     log = logging.getLogger(name=name)
     return log

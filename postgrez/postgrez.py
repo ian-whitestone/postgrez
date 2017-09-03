@@ -12,6 +12,7 @@ import sys
 import re
 import io
 
+
 log = create_logger(__name__)
 
 ## number of characters in query to display
@@ -131,7 +132,6 @@ class Connection(object):
         log.info('Attempting to disconnect from database %s' % self.database)
         try:
             self.cursor.close()
-            self.conn.close()
         except Exception as e:
             log.error('Error closing cursor. Error: %s', e)
             raise
@@ -210,7 +210,11 @@ class Load(Connection):
         """
         super(Load, self).__init__(setup)
 
+<<<<<<< HEAD
     def load_from_object(self, table, data):
+=======
+    def load_object(self, table, data):
+>>>>>>> 92b464a78ee31c0dd5615a2d968cece85954ac6a
         """Load data into a Postgres table from a python list.
 
         Args:
@@ -235,11 +239,19 @@ class Load(Connection):
                 % e)
             raise
 
+<<<<<<< HEAD
     def load_from_file(self, table_name, filename, delimiter=','):
         """
         Args:
             table_name (str): name of table to load data into.
             filename (str): name of the file
+=======
+    def load_file(self, table, filename, delimiter=','):
+        """
+        Args:
+            table (str): name of table to load data into.
+            file (str): name of the file
+>>>>>>> 92b464a78ee31c0dd5615a2d968cece85954ac6a
             delimiter (str): delimiter with which the columns are separated.
                 Defaults to ','
 
@@ -248,7 +260,11 @@ class Load(Connection):
         """
         try:
             log.info('Attempting to load file %s  into table %s' %
+<<<<<<< HEAD
                         (filename, table_name))
+=======
+                        (filename, table))
+>>>>>>> 92b464a78ee31c0dd5615a2d968cece85954ac6a
 
             with open(filename, 'r') as f:
                 self.cursor.copy_from(f, table, sep=delimiter, null='NULL')
@@ -271,6 +287,7 @@ class Export(Connection):
         """
         super(Export, self).__init__(setup)
 
+<<<<<<< HEAD
     def _build_copy_query(self, sql, columns=None, delimiter=',', header=True):
         """Build query used in the cursor.copy_expert() method.
 
@@ -390,3 +407,7 @@ class Export(Connection):
             log.error('Unable to export to object. Error: %s' % (e))
             raise
         return data
+=======
+    def export(self):
+        pass
+>>>>>>> 92b464a78ee31c0dd5615a2d968cece85954ac6a
