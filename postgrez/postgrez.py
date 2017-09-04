@@ -212,12 +212,16 @@ class Load(Connection):
         super(Load, self).__init__(setup)
 
 
-    def load_from_object(self, table_name, data):
+    def load_from_object(self, table_name, data, columns=None):
         """Load data into a Postgres table from a python list.
 
         Args:
             table_name (str): name of table to load data into.
             data (list): list of tuples, where each row is a tuple
+            columns (list): iterable with name of the columns to import.
+                The length and types should match the content of the file to
+                read. If not specified, it is assumed that the entire table
+                matches the file structure. Defaults to None.
 
         Raises:
             Exception: If an error occurs while loading.
@@ -229,7 +233,8 @@ class Load(Connection):
             table_width = len(data[0])
             template_string = "|".join(['{}'] * table_width)
             f = IteratorFile((template_string.format(*x) for x in data))
-            self.cursor.copy_from(f, table_name, sep="|", null='NULL')
+            self.cursor.copy_from(f, table_name, sep="|", null='NULL',
+                                    columns=columns)
             self.conn.commit()
 
         except Exception as e:
@@ -237,13 +242,17 @@ class Load(Connection):
                 "Error: %s" % e)
 
 
-    def load_from_file(self, table_name, filename, delimiter=','):
+    def load_from_file(self, table_name, filename, delimiter=',', columns=None):
         """
         Args:
             table_name (str): name of table to load data into.
             filename (str): name of the file
             delimiter (str): delimiter with which the columns are separated.
                 Defaults to ','
+            columns (list): iterable with name of the columns to import.
+                The length and types should match the content of the file to
+                read. If not specified, it is assumed that the entire table
+                matches the file structure. Defaults to None.
 
         Raises:
             Exception: If an error occurs while loading.
@@ -253,7 +262,8 @@ class Load(Connection):
                         (filename, table_name))
 
             with open(filename, 'r') as f:
-                self.cursor.copy_from(f, table, sep=delimiter, null='NULL')
+                self.cursor.copy_from(f, table, sep=delimiter, null='NULL',
+                                        columns=columns)
                 self.conn.commit()
 
         except Exception as e:

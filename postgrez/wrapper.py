@@ -45,17 +45,48 @@ def execute(setup, query, query_vars=None, columns=True):
     return results
 
 
+def load(setup, table_name, filename=None, data=None, delimiter=',',
+            columns=None):
+    """A wrapper function around Load.load_from methods. If a filename is
+    provided, the records will loaded from that file. Otherwise, records
+    will be loaded from the supplied data arg.
+
+    Args:
+        table_name (str): name of table to load data into.
+        filename (str, optional): name of the file. Defaults to None.
+        data (list, optional): list of tuples, where each row is a tuple.
+            Defaults to None.
+        delimiter (str, optional): If a filename is provided, delimiter with
+            which the columns are separated can be specified. Defaults to ','
+        columns (list): iterable with name of the columns to import.
+            The length and types should match the content of the file to
+            read. If not specified, it is assumed that the entire table
+            matches the file structure. Defaults to None.
+
+    """
+    if data is None and filename is None:
+        log.warning('No filename or data object was supplied. Exiting...')
+        return
+
+    with Load(setup) as l:
+        if filename:
+            l.load_from_file(table_name, filename, delimiter=delimiter,
+                                columns=columns)
+        else:
+            l.load_from_object(table_name, data, columns=columns)
+
+
 
 def export(setup, query, filename=None, columns=None, delimiter=',',
             header=True):
-    """A wrapper function around Load.load_from methods. If a filename is
+    """A wrapper function around Export.export_to methods. If a filename is
     provided, the records will be written to that file. Otherwise, records
     will be returned.
 
     Args:
         setup (str): Name of the db setup to use in ~/.postgrez
         query (str): A select query or a table_name
-        filename (str): Filename to copy to. Defaults to None.
+        filename (str, optional): Filename to copy to. Defaults to None.
         columns (list): List of column names to export. columns should only
             be provided if you are exporting a table
             (i.e. query = 'table_name'). If query is a query to export, desired

@@ -81,18 +81,32 @@ postgrez comes with two options for loading: loading from a Python list, or a lo
 ```python
 
 # load Python list into my_table
-data = [(1, 2, 3), (4,5,6)]
+data = [(1, 2, 3), (4, 5, 6)]
 with postgrez.Load('my_local_db') as l:
-    l.load_to_object('my_table', data)
-
+    l.load_from_object('my_table', data)
 
 # load csv into my_table
 with postgrez.Load('my_local_db') as l:
-    l.load_to_file('my_table', 'my_file.csv')
+    l.load_from_file('my_table', 'my_file.csv')
 
 # load other flat file into my_table
 with postgrez.Load('my_local_db') as l:
-    l.load_to_file('my_table', 'my_file.tsv', '|')
+    l.load_from_file('my_table', 'my_file.tsv', delimiter='|')
+
+```
+
+In the examples shown above, the columns in the files and data object are expected to be in the same order as the columns in `my_table`. If this is not the case, the columns parameter must be supplied.
+
+```python
+
+# load Python list into my_table
+data = [(3, 2, 1), (6, 5, 4)]
+with postgrez.Load('my_local_db') as l:
+    l.load_to_object('my_table', data, columns=['col3','col2','col1'])
+
+data = [(2, 3, 1), (5, 6, 4)]
+with postgrez.Load('my_local_db') as l:
+    l.load_to_object('my_table', data, columns=['col2','col3','col1'])
 
 ```
 
@@ -166,8 +180,18 @@ df.head()
 
 
 #### Load Wrapper
+The load wrapper uses `Load.load_from_file` if a filename is provided. Alternatively, if the `data` arg is provided, `Load.load_from_object` is called.
 
+```python
+import postgrez
 
+# load Python list into my_table
+data = [(1, 2, 3), (4, 5, 6)]
+postgrez.load('my_table', data=data)
+
+# load csv into my_table
+postgrez.load('my_table', filename='my_file.csv')
+```
 
 #### Export Wrapper
 The export wrapper uses `Export.export_to_file` if a filename is provided. Otherwise, `Export.export_to_object` is called and the associated records are returned.
@@ -187,8 +211,3 @@ postgrez.export("my_local_db", "my_table", filename=results.csv,
 data = postgrez.export("my_local_db", "my_table")
 print (data)
 ```
-
-## Resources
-* [Docstring convention](http://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html)
-* [giraffez](https://github.com/capitalone/giraffez)
-*
