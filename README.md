@@ -74,7 +74,63 @@ with postgrez.Cmd('my_local_db') as c:
 print (results)
 ```
 
-If you don't want to be embedding the `with ...` code throughout your modules, I have provided some wrapper functions to further simplify:
+### Loading Data
+postgrez comes with two options for loading: loading from a Python list, or a local file. Both methods utilized the `psycopg2.connection.cursor.copy_from()` method, which is better practice than running a bunch of `INSERT INTO ` statements, see
+[here](https://www.postgresql.org/docs/current/static/populate.html) and [here](https://www.depesz.com/2007/07/05/how-to-insert-data-to-database-as-fast-as-possible/).
+
+```python
+
+# load Python list into my_table
+data = [(1, 2, 3), (4,5,6)]
+with postgrez.Load('my_local_db') as l:
+    l.load_to_object('my_table', data)
+
+
+# load csv into my_table
+with postgrez.Load('my_local_db') as l:
+    l.load_to_file('my_table', 'my_file.csv')
+
+# load other flat file into my_table
+with postgrez.Load('my_local_db') as l:
+    l.load_to_file('my_table', 'my_file.tsv', '|')
+
+```
+
+### Exporting Data
+Exporting records from a table or query is accomplished with the `psycopg2.connection.cursor.copy_expert()` method, due to it's flexibility over the `copy_to()` method.
+
+Similar to loading data, postgrez comes with two options for exporting. Records can be exported to a local file with the `Export.export_to_file()` method, or exported to a Python list with the `Export.export_to_object()` method.
+
+```python
+import postgrez
+
+# export my_table to local file
+with postgrez.Export('my_local_db') as e:
+  e.export_to_file('my_table', 'results.csv')
+
+# export the snap_dt column of my_table to local file
+with postgrez.Export('my_local_db') as e:
+  e.export_to_file('my_table', 'results.csv', columns=['snap_dt'])
+
+# export a subset of my_table to local file
+with postgrez.Export('my_local_db') as e:
+  e.export_to_file("select * my_table where snap_dt='2017-01-01'", 'results.csv')
+
+# export my_table to a Python variable
+with postgrez.Export('my_local_db') as e:
+  data = e.export_to_object("my_table")
+print (data)
+```
+
+Note: Exporting data into Python using the `Export.export_to_object()` method provides no performance increase over running a `select * from my_table` with the `Cmd.execute()` method.
+
+
+### Wrapper Functions
+
+If you don't want to be embedding the `with ...` code throughout your modules, I have provided some wrapper functions to further simplify.
+
+#### Cmd Wrapper
+Similar to above, the execute function can be run with a query and set of variables.
 
 ```python
 import postgrez
@@ -82,7 +138,10 @@ import postgrez
 # Run execute with variables
 query = 'update my_table set snap_dt=%s where value=%s'
 postgrez.execute('my_local_db', query, ('1900-01-01', 5))
+```
 
+The most useful part of the execute wrapper is the results parsing and formatting, which eliminates the need for users to parse the column names from the cursor description.
+```python
 # Run query and return formatted resultset
 data = postgrez.execute('my_local_db', 'select * from my_table limit 10')
 print (data)
@@ -100,35 +159,34 @@ CREATE TEMPORARY TABLE my_temp_table AS (
 SELECT * FROM my_temp_table;
 """
 
-data = postgrez.execute('my_local_db', 'select * from my_table limit 10')
+data = postgrez.execute('my_local_db', query)
 df = pd.DataFrame(data)
 df.head()
 ```
 
-### Loading Data
-postgrez comes with two options for loading: loading from a Python list, or a local file. Both methods utilized the `psycopg2.connection.cursor.copy_from()` method, which is better practice than running a bunch of `INSERT INTO ` statements, see
-[here](https://www.postgresql.org/docs/current/static/populate.html) and [here](https://www.depesz.com/2007/07/05/how-to-insert-data-to-database-as-fast-as-possible/).
+
+#### Load Wrapper
+
+
+
+#### Export Wrapper
+The export wrapper uses `Export.export_to_file` if a filename is provided. Otherwise, `Export.export_to_object` is called and the associated records are returned.
 
 ```python
+import postgrez
 
-# load Python list into my_table
-data = [(1, 2, 3), (4,5,6)]
-with postgrez.Load('my_local_db') as l:
-    l.load_object('my_table', data)
+# export a subset of my_table to local file
+postgrez.export("my_local_db", "select * my_table where snap_dt='2017-01-01'",
+                  filename=results.csv)
 
+# export the snap_dt column of my_table to local file
+postgrez.export("my_local_db", "my_table", filename=results.csv,
+                  columns=['snap_dt'])
 
-# load csv into my_table
-with postgrez.Load('my_local_db') as l:
-    l.load_file('my_table', 'my_file.csv')
-
-# load other flat file into my_table
-with postgrez.Load('my_local_db') as l:
-    l.load_file('my_table', 'my_file.tsv', '|')
-
+# export my_table to a Python variable
+data = postgrez.export("my_local_db", "my_table")
+print (data)
 ```
-
-### Exporting Data
-Exporting records from a table or query is accomplished with the `psycopg2.connection.cursor.copy_expert()` method, due to it's flexibility over the `copy_to()` method.
 
 ## Resources
 * [Docstring convention](http://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html)

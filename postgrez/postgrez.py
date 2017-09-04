@@ -5,7 +5,8 @@ Module contains 4 core classes: Connection, Cmd, Export and Load.
 import psycopg2
 from .utils import read_yaml, IteratorFile
 from .exceptions import (PostgrezConfigError, PostgrezConnectionError,
-                            PostgrezExecuteError)
+                            PostgrezExecuteError, PostgrezLoadError,
+                            PostgrezExportError)
 from .logger import create_logger
 import os
 import sys
@@ -211,11 +212,11 @@ class Load(Connection):
         super(Load, self).__init__(setup)
 
 
-    def load_from_object(self, table, data):
+    def load_from_object(self, table_name, data):
         """Load data into a Postgres table from a python list.
 
         Args:
-            table (str): name of table to load data into.
+            table_name (str): name of table to load data into.
             data (list): list of tuples, where each row is a tuple
 
         Raises:
@@ -223,18 +224,17 @@ class Load(Connection):
         """
         try:
             log.info('Attempting to load %s records into table %s' %
-                        (len(data), table))
+                        (len(data), table_name))
 
             table_width = len(data[0])
             template_string = "|".join(['{}'] * table_width)
             f = IteratorFile((template_string.format(*x) for x in data))
-            self.cursor.copy_from(f, table, sep="|", null='NULL')
+            self.cursor.copy_from(f, table_name, sep="|", null='NULL')
             self.conn.commit()
 
         except Exception as e:
-            log.exception("Unable to load data to Postgres due to error: %s"
-                % e)
-            raise
+            raise PostgrezLoadError("Unable to load data to Postgres. "
+                "Error: %s" % e)
 
 
     def load_from_file(self, table_name, filename, delimiter=','):
@@ -257,9 +257,8 @@ class Load(Connection):
                 self.conn.commit()
 
         except Exception as e:
-            log.exception("Unable to load file to Postgres due to error: %s"
-                % e)
-            raise
+            raise PostgrezLoadError("Unable to load file to Postgres. "
+                "Error: %s" % e)
 
 class Export(Connection):
     """Class which handles exporting data.
@@ -274,93 +273,95 @@ class Export(Connection):
         super(Export, self).__init__(setup)
 
 
-    def _build_copy_query(self, sql, columns=None, delimiter=',', header=True):
+    def _build_copy_query(self, query, columns=None, delimiter=',', header=True):
         """Build query used in the cursor.copy_expert() method.
 
         Args:
-            sql (str): A select query or a table
+            query (str): A select query or a table
             columns (list): List of column names to export. columns should only
                 be provided if you are exporting a table
-                (i.e. sql = 'table_name'). If sql is a query to export, desired
+                (i.e. query = 'table_name'). If query is a query to export, desired
                 columns should be specified in the select portion of that query
-                (i.e. sql = 'select col1, col2 from ...'). Defaults to None.
+                (i.e. query = 'select col1, col2 from ...'). Defaults to None.
             delimiter (str): Delimiter to separate columns with. Defaults to ','.
             header (boolean): Specify True to return the column names. Defaults
                 to True.
 
         Returns:
-            query (str): Formatted query to run in copy_expert()
+            copy_query (str): Formatted query to run in copy_expert()
 
         Raises:
             Exception: If an error occurs while building hte query.
         """
         try:
+            log.info('Building copy query')
             if columns:
                 columns = '(' + ','.join(columns) + ')'
 
-            ## check if provided sql is a query, or just a table name
-            if re.match('\s*select', sql, re.IGNORECASE):
+            ## check if provided query is a query, or just a table name
+            if re.match('\s*select', query, re.IGNORECASE):
                 if columns:
-                    log.warning('If a query is passed in the sql arg '
+                    log.warning('If a query is passed in the query arg '
                                 'instead of a tablename, columns must be '
                                 'specified in the query itself')
-                    columns = ''
-                query = "COPY ({0}) {1} TO STDOUT WITH DELIMITER '{2}' CSV {3}"
+                    columns = None
+                copy_query = "COPY ({0}) {1} TO STDOUT WITH DELIMITER '{2}' " \
+                                " CSV {3}"
             else:
-                query = "COPY {0} {1} TO STDOUT WITH DELIMITER '{2}' CSV {3}"
+                copy_query = "COPY {0} {1} TO STDOUT WITH DELIMITER '{2}' " \
+                                " CSV {3}"
 
-            query = query.format(
-                sql,
-                columns,
+            copy_query = copy_query.format(
+                query,
+                (columns if columns else ''),
                 delimiter,
                 ('HEADER' if header else '')
                 )
-            return query
+            return copy_query
         except Exception as e:
-            log.error('Unable to build query. Error: %s' % (e))
-            raise
+            raise PostgrezExportError('Unable to build query. Error: %s' % (e))
 
-    def export_to_file(self, sql, filename, columns=None, delimiter=',',
+    def export_to_file(self, query, filename, columns=None, delimiter=',',
                 header=True):
         """Export records from a table or query to a local file.
 
         Args:
-            sql (str): A select query or a table
+            query (str): A select query or a table
             columns (list): List of column names to export. columns should only
                 be provided if you are exporting a table
-                (i.e. sql = 'table_name'). If sql is a query to export, desired
+                (i.e. query = 'table_name'). If query is a query to export, desired
                 columns should be specified in the select portion of that query
-                (i.e. sql = 'select col1, col2 from ...'). Defaults to None.
+                (i.e. query = 'select col1, col2 from ...'). Defaults to None.
             filename (str): Filename to copy to.
             delimiter (str): Delimiter to separate columns with. Defaults to ','.
             header (boolean): Specify True to return the column names. Defaults
                 to True.
 
         Raises:
-            Exception: If an error occurs while exporting to the file.
+            PostgrezExportError: If an error occurs while exporting to the file.
         """
 
-        query = self._build_copy_query(sql, columns, delimiter, header)
+        copy_query = self._build_copy_query(query, columns, delimiter, header)
         try:
             log.info('Running copy_expert with\n%s\nOutputting results to %s' %
-                        (query, filename))
+                        (copy_query, filename))
             with open(filename, 'w') as f:
-                self.cursor.copy_expert(query, f)
+                self.cursor.copy_expert(copy_query, f)
         except Exception as e:
-            log.error('Unable to export to file %s. Error: %s' % (filename, e))
-            raise
+            raise PostgrezExportError('Unable to export to file %s. Error: %s'
+                    % (filename, e))
 
 
-    def export_to_object(self, sql, columns=None, delimiter=',', header=True):
-        """Export records from a table or query to a local file.
+    def export_to_object(self, query, columns=None, delimiter=',', header=True):
+        """Export records from a table or query and returns list of records.
 
         Args:
-            sql (str): A select query or a table
+            query (str): A select query or a table_name
             columns (list): List of column names to export. columns should only
                 be provided if you are exporting a table
-                (i.e. sql = 'table_name'). If sql is a query to export, desired
+                (i.e. query = 'table_name'). If query is a query to export, desired
                 columns should be specified in the select portion of that query
-                (i.e. sql = 'select col1, col2 from ...'). Defaults to None.
+                (i.e. query = 'select col1, col2 from ...'). Defaults to None.
             delimiter (str): Delimiter to separate columns with. Defaults to ','
             header (boolean): Specify True to return the column names. Defaults
                 to True.
@@ -371,25 +372,31 @@ class Export(Connection):
                 returns a list of lists where each list is [val1, val2, ...].
 
         Raises:
-            Exception: If an error occurs while exporting to an object.
+            PostgrezExportError: If an error occurs while exporting to an object.
         """
 
-        query = self._build_copy_query(sql, columns, delimiter, header)
+        copy_query = self._build_copy_query(query, columns, delimiter, header)
         data = None
         try:
-            log.info('Running copy_expert with \n%s' % (query))
+            log.info('Running copy_expert with with\n%s\nOutputting results to '
+                     'list.' % copy_query)
+            # stream output to local object
             text_stream = io.StringIO()
-            self.cursor.copy_expert(query, text_stream)
+            self.cursor.copy_expert(copy_query, text_stream)
             output = text_stream.getvalue()
+
+            # parse output
             output = output.split('\n')
             cols = output[0].split(delimiter)
+            end_index = (-1 if len(output[1:]) > 1 else 2)
             if header:
                 data = [{cols[i]:value for i, value in
                             enumerate(row.split(delimiter))}
-                            for row in output[1:-1]]
+                            for row in output[1:end_index]]
             else:
                 data = [row.split(delimiter) for row in output[1:-1]]
         except Exception as e:
-            log.error('Unable to export to object. Error: %s' % (e))
-            raise
+            raise PostgrezExportError('Unable to export to object. Error: %s'
+                    % (e))
+
         return data

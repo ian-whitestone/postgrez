@@ -9,10 +9,10 @@ def execute(setup, query, query_vars=None, columns=True):
 
     Args:
         setup (str): Name of the db setup to use in ~/.postgrez
+        query (str): Query to be executed. Query can contain placeholders,
+        as long as query_vars are supplied.
         query_vars (tuple, list or dict): Variables to be executed with query.
             See http://initd.org/psycopg/docs/usage.html#query-parameters.
-        query (str): Query to be executed. Query can contain placeholders,
-            as long as query_vars are supplied.
         columns (bool): Return column names in results. Defaults to True.
 
     Returns:
@@ -21,25 +21,62 @@ def execute(setup, query, query_vars=None, columns=True):
             query, update query etc..).
 
     Raises:
-        PostgrezExecuteError: If any error occurs during execution
-            or reading of resultset.
+        PostgrezExecuteError: If any error occurs reading of resultset.
     """
     results = None
-    try:
-        with Cmd(setup) as c:
-            c.execute(query, query_vars)
-            # no way to check if results were returned other than try-except
-            try:
-                results = c.cursor.fetchall()
-            except psycopg2.ProgrammingError as e:
-                # this error is raised when there are no results to fetch
-                pass
 
+    with Cmd(setup) as c:
+        c.execute(query, query_vars)
+        # no way to check if results were returned other than try-except
+        try:
+            results = c.cursor.fetchall()
+        except psycopg2.ProgrammingError as e:
+            # this error is raised when there are no results to fetch
+            pass
+
+        try:
             if columns and results:
                 cols = [desc[0] for desc in c.cursor.description]
                 results = [{cols[i]:value for i, value in enumerate(row)}
-                            for row in results]
-    except Exception as e:
-        raise PostgrezExecuteError('Unable to execute query %s due to '
-                     'Error: %s' % (query[0:QUERY_LENGTH], e))
+                        for row in results]
+        except Exception as e:
+            raise PostgrezExecuteError('Unable to retrieve results query %s '
+                         '.Error: %s' % (query[0:QUERY_LENGTH], e))
     return results
+
+
+
+def export(setup, query, filename=None, columns=None, delimiter=',',
+            header=True):
+    """A wrapper function around Load.load_from methods. If a filename is
+    provided, the records will be written to that file. Otherwise, records
+    will be returned.
+
+    Args:
+        setup (str): Name of the db setup to use in ~/.postgrez
+        query (str): A select query or a table_name
+        filename (str): Filename to copy to. Defaults to None.
+        columns (list): List of column names to export. columns should only
+            be provided if you are exporting a table
+            (i.e. query = 'table_name'). If query is a query to export, desired
+            columns should be specified in the select portion of that query
+            (i.e. query = 'select col1, col2 from ...'). Defaults to None.
+        delimiter (str): Delimiter to separate columns with. Defaults to ','
+        header (boolean): Specify True to return the column names. Defaults
+            to True.
+
+    Returns:
+        data (list): If noe filename is provided, records will be returned.
+            If header is True, returns list of dicts where each
+            dict is in the format {col1: val1, col2:val2, ...}. Otherwise,
+            returns a list of lists where each list is [val1, val2, ...].
+    """
+    data = None
+    with Export(setup) as e:
+        if filename:
+            e.export_to_file(query, filename=filename, columns=columns,
+                                delimiter=delimiter, header=header)
+        else:
+            data = e.export_to_object(query, columns=columns,
+                                        delimiter=delimiter, header=header)
+    return data

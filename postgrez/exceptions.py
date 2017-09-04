@@ -24,3 +24,14 @@ class PostgrezConnectionError(Postgrez):
 class PostgrezExecuteError(Postgrez):
     """Raised when there is an error running the Cmd.execute() function.
     """
+
+
+class PostgrezLoadError(Postgrez):
+    """Raised when there is an error running the Load.load_from() functions.
+    """
+
+
+
+class PostgrezExportError(Postgrez):
+    """Raised when there is an error running the Export.export_to() functions.
+    """
