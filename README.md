@@ -7,7 +7,14 @@ I extensively use the [giraffez](https://github.com/capitalone/giraffez) library
 Emphasis on the **ez**.
 
 ## Installation
-postgrez can be installed with pip:
+postgrez can be installed with pip & setuptools:
+
+First, make sure you upgrade (or install) setuptools:
+```
+$ pip install --upgrade setuptools
+```
+
+Then install:
 ```
 $ pip install git+https://github.com/ian-whitestone/postgrez.git
 ```
@@ -187,10 +194,10 @@ import postgrez
 
 # load Python list into my_table
 data = [(1, 2, 3), (4, 5, 6)]
-postgrez.load('my_table', data=data)
+postgrez.load('my_local_db', 'my_table', data=data)
 
 # load csv into my_table
-postgrez.load('my_table', filename='my_file.csv')
+postgrez.load('my_local_db', 'my_table', filename='my_file.csv')
 ```
 
 #### Export Wrapper
