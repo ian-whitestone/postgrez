@@ -46,7 +46,7 @@ def execute(setup, query, query_vars=None, columns=True):
 
 
 def load(setup, table_name, filename=None, data=None, delimiter=',',
-            columns=None):
+            columns=None, null=None):
     """A wrapper function around Load.load_from methods. If a filename is
     provided, the records will loaded from that file. Otherwise, records
     will be loaded from the supplied data arg.
@@ -62,7 +62,10 @@ def load(setup, table_name, filename=None, data=None, delimiter=',',
             The length and types should match the content of the file to
             read. If not specified, it is assumed that the entire table
             matches the file structure. Defaults to None.
-
+        null (str): Format which nulls (or missing values) are represented.
+                Defaults to '' if a file is provided, 'None' if an object is
+                provided. See a more detailed explanation in the
+                Load.load_from_file() or Load.load_from_object() functions.
     """
     if data is None and filename is None:
         log.warning('No filename or data object was supplied. Exiting...')
@@ -70,10 +73,17 @@ def load(setup, table_name, filename=None, data=None, delimiter=',',
 
     with Load(setup) as l:
         if filename:
-            l.load_from_file(table_name, filename, delimiter=delimiter,
-                                columns=columns)
+            if null:
+                l.load_from_file(table_name, filename, delimiter=delimiter,
+                                    columns=columns, null=null)
+            else:
+                l.load_from_file(table_name, filename, delimiter=delimiter,
+                                    columns=columns)
         else:
-            l.load_from_object(table_name, data, columns=columns)
+            if null:
+                l.load_from_object(table_name, data, columns=columns, null=null)
+            else:
+                l.load_from_object(table_name, data, columns=columns)
 
 
 

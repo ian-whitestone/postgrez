@@ -212,7 +212,7 @@ class Load(Connection):
         super(Load, self).__init__(setup)
 
 
-    def load_from_object(self, table_name, data, columns=None):
+    def load_from_object(self, table_name, data, columns=None, null='None'):
         """Load data into a Postgres table from a python list.
 
         Args:
@@ -222,7 +222,11 @@ class Load(Connection):
                 The length and types should match the content of the file to
                 read. If not specified, it is assumed that the entire table
                 matches the file structure. Defaults to None.
-
+            null (str): Format which nulls (or missing values) are represented.
+                Defaults to 'None'. If a row is passed in as
+                [None, 1, '2017-05-01', 25.321], it will treat the first
+                element as missing and inject a Null value into the database for
+                the corresponding column.
         Raises:
             Exception: If an error occurs while loading.
         """
@@ -233,7 +237,7 @@ class Load(Connection):
             table_width = len(data[0])
             template_string = "|".join(['{}'] * table_width)
             f = IteratorFile((template_string.format(*x) for x in data))
-            self.cursor.copy_from(f, table_name, sep="|", null='NULL',
+            self.cursor.copy_from(f, table_name, sep="|", null=null,
                                     columns=columns)
             self.conn.commit()
 
@@ -242,7 +246,8 @@ class Load(Connection):
                 "Error: %s" % e)
 
 
-    def load_from_file(self, table_name, filename, delimiter=',', columns=None):
+    def load_from_file(self, table_name, filename, delimiter=',', columns=None,
+                        null=''):
         """
         Args:
             table_name (str): name of table to load data into.
@@ -253,7 +258,13 @@ class Load(Connection):
                 The length and types should match the content of the file to
                 read. If not specified, it is assumed that the entire table
                 matches the file structure. Defaults to None.
+            null (str): Format which nulls (or missing values) are represented.
+                Defaults to ''. If a CSV file contains a row like:
 
+                ,1,2017-05-01,25.321
+
+                it will treat the first element as missing and inject a Null
+                value into the database for the corresponding column.
         Raises:
             Exception: If an error occurs while loading.
         """
@@ -262,7 +273,7 @@ class Load(Connection):
                         (filename, table_name))
 
             with open(filename, 'r') as f:
-                self.cursor.copy_from(f, table, sep=delimiter, null='NULL',
+                self.cursor.copy_from(f, table_name, sep=delimiter, null=null,
                                         columns=columns)
                 self.conn.commit()
 
