@@ -369,8 +369,8 @@ class Export(Connection):
 
         Returns:
             data (list): If header is True, returns list of dicts where each
-                dict is in the format {col1: val1, col2:val2, ...}. Otherwise,
-                returns a list of lists where each list is [val1, val2, ...].
+            dict is in the format {col1: val1, col2:val2, ...}. Otherwise,
+            returns a list of lists where each list is [val1, val2, ...].
 
         Raises:
             PostgrezExportError: If an error occurs while exporting to an object.

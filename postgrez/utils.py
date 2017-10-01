@@ -14,16 +14,18 @@ log = create_logger(__name__)
 
 def read_yaml(yaml_file):
     """Read a yaml file.
+
     Args:
         yaml_file (str): Full path of the yaml file.
 
     Returns:
-        data (dict): Dictionary of yaml_file contents.
-            None is returned if an error occurs while reading.
+        data (dict): Dictionary of yaml_file contents. None is returned if an
+        error occurs while reading.
 
     Raises:
-        Exception: If the yaml_file cannot be opened
+        Exception: If the yaml_file cannot be opened.
     """
+
     data = None
     try:
         with open(yaml_file) as f:

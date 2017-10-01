@@ -22,8 +22,8 @@ def execute(query, query_vars=None, columns=True, setup='default'):
 
     Returns:
         results (list): Results from query.
-            Returns None if no resultset was generated (i.e. insert into
-            query, update query etc..).
+        Returns None if no resultset was generated (i.e. insert into
+        query, update query etc..).
 
     Raises:
         PostgrezExecuteError: If any error occurs reading of resultset.
@@ -116,11 +116,12 @@ def export(query, filename=None, columns=None, delimiter=',',
         setup (str): Name of the db setup to use in ~/.postgrez. If no setup
             is provided, looks for the 'default' key in ~/.postgrez which
             specifies the default configuration to use.
+
     Returns:
         data (list): If noe filename is provided, records will be returned.
-            If header is True, returns list of dicts where each
-            dict is in the format {col1: val1, col2:val2, ...}. Otherwise,
-            returns a list of lists where each list is [val1, val2, ...].
+        If header is True, returns list of dicts where each
+        dict is in the format {col1: val1, col2:val2, ...}. Otherwise,
+        returns a list of lists where each list is [val1, val2, ...].
     """
     data = None
     with Export(setup) as e:
