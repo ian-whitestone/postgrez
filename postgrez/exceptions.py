@@ -1,4 +1,6 @@
-"""Reference: https://www.programiz.com/python-programming/user-defined-exception
+"""
+Exceptions module, contains custom Postgrez exceptions.
+Reference: https://www.programiz.com/python-programming/user-defined-exception
 """
 
 

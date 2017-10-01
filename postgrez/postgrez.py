@@ -1,16 +1,15 @@
-"""Main postgrez module
-Module contains 4 core classes: Connection, Cmd, Export and Load.
+"""
+Main postgrez module, contains 4 core classes: Connection, Cmd, Export and Load.
 """
 
 import psycopg2
-from .utils import read_yaml, IteratorFile
+from .utils import read_yaml, IteratorFile, build_copy_query
 from .exceptions import (PostgrezConfigError, PostgrezConnectionError,
                             PostgrezExecuteError, PostgrezLoadError,
                             PostgrezExportError)
 from .logger import create_logger
 import os
 import sys
-import re
 import io
 
 
@@ -221,7 +220,7 @@ class Load(Connection):
         super(Load, self).__init__(setup)
 
 
-    def load_from_object(self, table_name, data, columns=None, null='None'):
+    def load_from_object(self, table_name, data, columns=None, null=None):
         """Load data into a Postgres table from a python list.
 
         Args:
@@ -237,11 +236,13 @@ class Load(Connection):
                 element as missing and inject a Null value into the database for
                 the corresponding column.
         Raises:
-            Exception: If an error occurs while loading.
+            PostgrezLoadError: If an error occurs while loading.
         """
         try:
             log.info('Attempting to load %s records into table %s' %
                         (len(data), table_name))
+            if null is None:
+                null = 'None'
 
             table_width = len(data[0])
             template_string = "|".join(['{}'] * table_width)
@@ -255,36 +256,45 @@ class Load(Connection):
                 "Error: %s" % e)
 
 
-    def load_from_file(self, table_name, filename, delimiter=',', columns=None,
-                        null=''):
+    def load_from_file(self, table_name, filename, header=True, delimiter=',',
+                        columns=None, quote=None, null=None):
         """
         Args:
             table_name (str): name of table to load data into.
             filename (str): name of the file
+            header (boolean): Specify True if the first row of the flat file
+                contains the column names. Defaults to True.
             delimiter (str): delimiter with which the columns are separated.
                 Defaults to ','
             columns (list): iterable with name of the columns to import.
                 The length and types should match the content of the file to
                 read. If not specified, it is assumed that the entire table
                 matches the file structure. Defaults to None.
+            quote (str): Specifies the quoting character to be used when a data
+                value is quoted. This must be a single one-byte character.
+                Defaults to None, which uses the postgres default of a single
+                double-quote.
             null (str): Format which nulls (or missing values) are represented.
-                Defaults to ''. If a CSV file contains a row like:
+                Defaults to None, which corresponds to an empty string.
+                If a CSV file contains a row like:
 
                 ,1,2017-05-01,25.321
 
                 it will treat the first element as missing and inject a Null
                 value into the database for the corresponding column.
         Raises:
-            Exception: If an error occurs while loading.
+            PostgrezLoadError: If an error occurs while loading.
         """
         try:
             log.info('Attempting to load file %s  into table %s' %
                         (filename, table_name))
 
+            copy_query = build_copy_query('load', table_name, header=header,
+                                        columns=columns, delimiter=delimiter,
+                                        quote=quote, null=null)
             with open(filename, 'r') as f:
-                self.cursor.copy_from(f, table_name, sep=delimiter, null=null,
-                                        columns=columns)
-                self.conn.commit()
+                log.info('Executing copy query\n%s' % copy_query)
+                self.cursor.copy_expert(copy_query, f)
 
         except Exception as e:
             raise PostgrezLoadError("Unable to load file to Postgres. "
@@ -305,56 +315,8 @@ class Export(Connection):
         super(Export, self).__init__(setup)
 
 
-    def _build_copy_query(self, query, columns=None, delimiter=',', header=True):
-        """Build query used in the cursor.copy_expert() method.
-
-        Args:
-            query (str): A select query or a table
-            columns (list): List of column names to export. columns should only
-                be provided if you are exporting a table
-                (i.e. query = 'table_name'). If query is a query to export, desired
-                columns should be specified in the select portion of that query
-                (i.e. query = 'select col1, col2 from ...'). Defaults to None.
-            delimiter (str): Delimiter to separate columns with. Defaults to ','.
-            header (boolean): Specify True to return the column names. Defaults
-                to True.
-
-        Returns:
-            copy_query (str): Formatted query to run in copy_expert()
-
-        Raises:
-            Exception: If an error occurs while building hte query.
-        """
-        try:
-            log.info('Building copy query')
-            if columns:
-                columns = '(' + ','.join(columns) + ')'
-
-            ## check if provided query is a query, or just a table name
-            if re.match('\s*select', query, re.IGNORECASE):
-                if columns:
-                    log.warning('If a query is passed in the query arg '
-                                'instead of a tablename, columns must be '
-                                'specified in the query itself')
-                    columns = None
-                copy_query = "COPY ({0}) {1} TO STDOUT WITH DELIMITER '{2}' " \
-                                " CSV {3}"
-            else:
-                copy_query = "COPY {0} {1} TO STDOUT WITH DELIMITER '{2}' " \
-                                " CSV {3}"
-
-            copy_query = copy_query.format(
-                query,
-                (columns if columns else ''),
-                delimiter,
-                ('HEADER' if header else '')
-                )
-            return copy_query
-        except Exception as e:
-            raise PostgrezExportError('Unable to build query. Error: %s' % (e))
-
     def export_to_file(self, query, filename, columns=None, delimiter=',',
-                header=True):
+                header=True, null=None):
         """Export records from a table or query to a local file.
 
         Args:
@@ -368,23 +330,30 @@ class Export(Connection):
             delimiter (str): Delimiter to separate columns with. Defaults to ','.
             header (boolean): Specify True to return the column names. Defaults
                 to True.
+            null (str): Specifies the string that represents a null value.
+                Defaults to None, which uses the postgres default of an
+                unquoted empty string.
 
         Raises:
             PostgrezExportError: If an error occurs while exporting to the file.
         """
 
-        copy_query = self._build_copy_query(query, columns, delimiter, header)
+        copy_query = build_copy_query('export',query, columns=columns,
+                                            delimiter=delimiter,
+                                            header=header, null=null)
         try:
             log.info('Running copy_expert with\n%s\nOutputting results to %s' %
                         (copy_query, filename))
             with open(filename, 'w') as f:
+                log.info('Executing copy query\n%s' % copy_query)
                 self.cursor.copy_expert(copy_query, f)
         except Exception as e:
             raise PostgrezExportError('Unable to export to file %s. Error: %s'
                     % (filename, e))
 
 
-    def export_to_object(self, query, columns=None, delimiter=',', header=True):
+    def export_to_object(self, query, columns=None, delimiter=',', header=True,
+                            null=None):
         """Export records from a table or query and returns list of records.
 
         Args:
@@ -400,14 +369,16 @@ class Export(Connection):
 
         Returns:
             data (list): If header is True, returns list of dicts where each
-                dict is in the format {col1: val1, col2:val2, ...}. Otherwise,
-                returns a list of lists where each list is [val1, val2, ...].
+            dict is in the format {col1: val1, col2:val2, ...}. Otherwise,
+            returns a list of lists where each list is [val1, val2, ...].
 
         Raises:
             PostgrezExportError: If an error occurs while exporting to an object.
         """
 
-        copy_query = self._build_copy_query(query, columns, delimiter, header)
+        copy_query = build_copy_query('export',query, columns=columns,
+                                            delimiter=delimiter,
+                                            header=header, null=null)
         data = None
         try:
             log.info('Running copy_expert with with\n%s\nOutputting results to '

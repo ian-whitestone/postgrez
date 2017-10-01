@@ -1,3 +1,6 @@
+"""
+Logger module used to create logging objects.
+"""
 import sys
 import logging
 

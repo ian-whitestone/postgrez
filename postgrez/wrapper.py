@@ -1,3 +1,6 @@
+"""
+Wrapper module which contains wrapper functions for common psycopg2 routines.
+"""
 from .postgrez import Connection, Cmd, Load, Export, QUERY_LENGTH
 from .logger import create_logger
 
@@ -19,8 +22,8 @@ def execute(query, query_vars=None, columns=True, setup='default'):
 
     Returns:
         results (list): Results from query.
-            Returns None if no resultset was generated (i.e. insert into
-            query, update query etc..).
+        Returns None if no resultset was generated (i.e. insert into
+        query, update query etc..).
 
     Raises:
         PostgrezExecuteError: If any error occurs reading of resultset.
@@ -48,7 +51,7 @@ def execute(query, query_vars=None, columns=True, setup='default'):
 
 
 def load(table_name, filename=None, data=None, delimiter=',',
-            columns=None, null=None, setup='default'):
+            columns=None, quote=None, null=None, header=True, setup='default'):
     """A wrapper function around Load.load_from methods. If a filename is
     provided, the records will loaded from that file. Otherwise, records
     will be loaded from the supplied data arg.
@@ -68,6 +71,12 @@ def load(table_name, filename=None, data=None, delimiter=',',
                 Defaults to '' if a file is provided, 'None' if an object is
                 provided. See a more detailed explanation in the
                 Load.load_from_file() or Load.load_from_object() functions.
+        quote (str): Specifies the quoting character to be used when a data
+            value is quoted. This must be a single one-byte character.
+            Defaults to None, which uses the postgres default of a single
+            double-quote.
+        header (boolean): Specify True if the first row of the flat file
+            contains the column names. Defaults to True.
         setup (str): Name of the db setup to use in ~/.postgrez. If no setup
             is provided, looks for the 'default' key in ~/.postgrez which
             specifies the default configuration to use.
@@ -78,22 +87,14 @@ def load(table_name, filename=None, data=None, delimiter=',',
 
     with Load(setup) as l:
         if filename:
-            if null:
-                l.load_from_file(table_name, filename, delimiter=delimiter,
-                                    columns=columns, null=null)
-            else:
-                l.load_from_file(table_name, filename, delimiter=delimiter,
-                                    columns=columns)
+            l.load_from_file(table_name, filename, delimiter=delimiter,
+                                columns=columns, null=null, quote=quote,
+                                header=header)
         else:
-            if null:
-                l.load_from_object(table_name, data, columns=columns, null=null)
-            else:
-                l.load_from_object(table_name, data, columns=columns)
-
-
+            l.load_from_object(table_name, data, columns=columns, null=null)
 
 def export(query, filename=None, columns=None, delimiter=',',
-            header=True, setup='default'):
+            header=True, null=None, setup='default'):
     """A wrapper function around Export.export_to methods. If a filename is
     provided, the records will be written to that file. Otherwise, records
     will be returned.
@@ -109,21 +110,25 @@ def export(query, filename=None, columns=None, delimiter=',',
         delimiter (str): Delimiter to separate columns with. Defaults to ','
         header (boolean): Specify True to return the column names. Defaults
             to True.
+        null (str): Specifies the string that represents a null value.
+            Defaults to None, which uses the postgres default of an
+            unquoted empty string.
         setup (str): Name of the db setup to use in ~/.postgrez. If no setup
             is provided, looks for the 'default' key in ~/.postgrez which
             specifies the default configuration to use.
+
     Returns:
         data (list): If noe filename is provided, records will be returned.
-            If header is True, returns list of dicts where each
-            dict is in the format {col1: val1, col2:val2, ...}. Otherwise,
-            returns a list of lists where each list is [val1, val2, ...].
+        If header is True, returns list of dicts where each
+        dict is in the format {col1: val1, col2:val2, ...}. Otherwise,
+        returns a list of lists where each list is [val1, val2, ...].
     """
     data = None
     with Export(setup) as e:
         if filename:
             e.export_to_file(query, filename=filename, columns=columns,
-                                delimiter=delimiter, header=header)
+                                delimiter=delimiter, header=header, null=null)
         else:
-            data = e.export_to_object(query, columns=columns,
+            data = e.export_to_object(query, columns=columns, null=null,
                                         delimiter=delimiter, header=header)
     return data

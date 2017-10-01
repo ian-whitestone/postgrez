@@ -90,7 +90,7 @@ with postgrez.Cmd() as c:
 ```
 
 ### Loading Data
-postgrez comes with two options for loading: loading from a Python list, or a local file. Both methods utilized the `psycopg2.connection.cursor.copy_from()` method, which is better practice than running a bunch of `INSERT INTO ` statements, see
+postgrez comes with two options for loading: loading from a Python list, or a local file. Both methods utilize the `psycopg2.connection.cursor.copy_from()` method, which is better practice than running a bunch of `INSERT INTO ` statements, see
 [here](https://www.postgresql.org/docs/current/static/populate.html) and [here](https://www.depesz.com/2007/07/05/how-to-insert-data-to-database-as-fast-as-possible/).
 
 ```python
@@ -207,7 +207,7 @@ import postgrez
 
 # load Python list into my_table
 data = [(1, 2, 3), (4, 5, 6)]
-postgrez.load(table_name='my_table', data=data)
+postgrez.load(table_name='my_table', data=data, setup='my_local_db')
 
 # load csv into my_table
 postgrez.load(table_name='my_table', filename='my_file.csv')
@@ -221,7 +221,7 @@ import postgrez
 
 # export a subset of my_table to local file
 postgrez.export(query="select * my_table where snap_dt='2017-01-01'",
-                  filename=results.csv)
+                  filename=results.csv, setup='my_local_db')
 
 # export the snap_dt column of my_table to local file
 postgrez.export(query="my_table", filename=results.csv,
