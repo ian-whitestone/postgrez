@@ -22,7 +22,7 @@ import sphinx_rtd_theme
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-project_path = os.path.abspath('../')
+project_path = os.path.abspath('../../')
 print ('Project path: %s' % project_path)
 sys.path.insert(0, project_path)
 
