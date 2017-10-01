@@ -3,17 +3,19 @@ from .logger import create_logger
 
 log = create_logger(__name__)
 
-def execute(setup, query, query_vars=None, columns=True):
+def execute(query, query_vars=None, columns=True, setup='default'):
     """A wrapper function around Cmd.execute() that returns formatted
     results.
 
     Args:
-        setup (str): Name of the db setup to use in ~/.postgrez
         query (str): Query to be executed. Query can contain placeholders,
-        as long as query_vars are supplied.
+            as long as query_vars are supplied.
         query_vars (tuple, list or dict): Variables to be executed with query.
             See http://initd.org/psycopg/docs/usage.html#query-parameters.
         columns (bool): Return column names in results. Defaults to True.
+        setup (str): Name of the db setup to use in ~/.postgrez. If no setup
+            is provided, looks for the 'default' key in ~/.postgrez which
+            specifies the default configuration to use.
 
     Returns:
         results (list): Results from query.
@@ -45,8 +47,8 @@ def execute(setup, query, query_vars=None, columns=True):
     return results
 
 
-def load(setup, table_name, filename=None, data=None, delimiter=',',
-            columns=None, null=None):
+def load(table_name, filename=None, data=None, delimiter=',',
+            columns=None, null=None, setup='default'):
     """A wrapper function around Load.load_from methods. If a filename is
     provided, the records will loaded from that file. Otherwise, records
     will be loaded from the supplied data arg.
@@ -66,6 +68,9 @@ def load(setup, table_name, filename=None, data=None, delimiter=',',
                 Defaults to '' if a file is provided, 'None' if an object is
                 provided. See a more detailed explanation in the
                 Load.load_from_file() or Load.load_from_object() functions.
+        setup (str): Name of the db setup to use in ~/.postgrez. If no setup
+            is provided, looks for the 'default' key in ~/.postgrez which
+            specifies the default configuration to use.
     """
     if data is None and filename is None:
         log.warning('No filename or data object was supplied. Exiting...')
@@ -87,14 +92,13 @@ def load(setup, table_name, filename=None, data=None, delimiter=',',
 
 
 
-def export(setup, query, filename=None, columns=None, delimiter=',',
-            header=True):
+def export(query, filename=None, columns=None, delimiter=',',
+            header=True, setup='default'):
     """A wrapper function around Export.export_to methods. If a filename is
     provided, the records will be written to that file. Otherwise, records
     will be returned.
 
     Args:
-        setup (str): Name of the db setup to use in ~/.postgrez
         query (str): A select query or a table_name
         filename (str, optional): Filename to copy to. Defaults to None.
         columns (list): List of column names to export. columns should only
@@ -105,7 +109,9 @@ def export(setup, query, filename=None, columns=None, delimiter=',',
         delimiter (str): Delimiter to separate columns with. Defaults to ','
         header (boolean): Specify True to return the column names. Defaults
             to True.
-
+        setup (str): Name of the db setup to use in ~/.postgrez. If no setup
+            is provided, looks for the 'default' key in ~/.postgrez which
+            specifies the default configuration to use.
     Returns:
         data (list): If noe filename is provided, records will be returned.
             If header is True, returns list of dicts where each

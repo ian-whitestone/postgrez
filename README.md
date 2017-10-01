@@ -48,7 +48,10 @@ aws_db:
     password: my_passwd
     database: aws_db_name
     port: 5432
+
+default: my_local_db # Optionally add this parameter to specify the default setup to be used
 ```
+
 
 ## Usage
 
@@ -59,19 +62,19 @@ The main parameter required to initiate all postgrez classes is the setup variab
 import postgrez
 
 # Update table
-with postgrez.Cmd('my_local_db') as c:
+with postgrez.Cmd(setup='my_local_db') as c:
     query = 'update my_table set snap_dt=current_date'
-    c.execute(query)
+    c.execute(query=query)
 
 # Pass in variables to format your query
-with postgrez.Cmd('my_local_db') as c:
+with postgrez.Cmd(setup='my_local_db') as c:
     query = 'update my_table set snap_dt=%s where value=%s'
-    c.execute(query, ('1900-01-01', 5))
+    c.execute(query=query, query_vars=('1900-01-01', 5))
 
 # Select and retrieve resultset
-with postgrez.Cmd('my_local_db') as c:
+with postgrez.Cmd(setup='my_local_db') as c:
     query = 'select * from my_table limit 10'
-    c.execute(query)
+    c.execute(query=query)
     resultset = c.cursor.fetchall()
     cols = [desc[0] for desc in c.cursor.description]
 
@@ -79,6 +82,11 @@ with postgrez.Cmd('my_local_db') as c:
     results = [{cols[i]:value for i, value in enumerate(row)}
                         for row in resultset]
 print (results)
+
+# If a default setup was specified in ~/.postgrez, the setup variable can be omitted
+with postgrez.Cmd() as c:
+    query = 'update my_table set snap_dt=current_date'
+    c.execute(query=query)
 ```
 
 ### Loading Data
@@ -89,16 +97,17 @@ postgrez comes with two options for loading: loading from a Python list, or a lo
 
 # load Python list into my_table
 data = [(1, 2, 3), (4, 5, 6)]
-with postgrez.Load('my_local_db') as l:
-    l.load_from_object('my_table', data)
+with postgrez.Load() as l:
+    l.load_from_object(table_name='my_table', data=data)
 
 # load csv into my_table
-with postgrez.Load('my_local_db') as l:
-    l.load_from_file('my_table', 'my_file.csv')
+with postgrez.Load() as l:
+    l.load_from_file(table_name='my_table', filename='my_file.csv')
 
 # load other flat file into my_table
-with postgrez.Load('my_local_db') as l:
-    l.load_from_file('my_table', 'my_file.tsv', delimiter='|')
+with postgrez.Load() as l:
+    l.load_from_file(table_name='my_table', filename='my_file.tsv',
+                      delimiter='|')
 
 ```
 
@@ -109,11 +118,13 @@ In the examples shown above, the columns in the files and data object are expect
 # load Python list into my_table
 data = [(3, 2, 1), (6, 5, 4)]
 with postgrez.Load('my_local_db') as l:
-    l.load_to_object('my_table', data, columns=['col3','col2','col1'])
+    l.load_to_object(table_name='my_table', data=data,
+                      columns=['col3','col2','col1'])
 
 data = [(2, 3, 1), (5, 6, 4)]
 with postgrez.Load('my_local_db') as l:
-    l.load_to_object('my_table', data, columns=['col2','col3','col1'])
+    l.load_to_object(table_name='my_table', data=data,
+                      columns=['col2','col3','col1'])
 
 ```
 
@@ -126,20 +137,22 @@ Similar to loading data, postgrez comes with two options for exporting. Records 
 import postgrez
 
 # export my_table to local file
-with postgrez.Export('my_local_db') as e:
-  e.export_to_file('my_table', 'results.csv')
+with postgrez.Export() as e:
+  e.export_to_file(query='my_table', filename='results.csv')
 
 # export the snap_dt column of my_table to local file
-with postgrez.Export('my_local_db') as e:
-  e.export_to_file('my_table', 'results.csv', columns=['snap_dt'])
+with postgrez.Export() as e:
+  e.export_to_file(query='my_table', filename='results.csv',
+                    columns=['snap_dt'])
 
 # export a subset of my_table to local file
-with postgrez.Export('my_local_db') as e:
-  e.export_to_file("select * my_table where snap_dt='2017-01-01'", 'results.csv')
+with postgrez.Export() as e:
+  e.export_to_file(query="select * my_table where snap_dt='2017-01-01'",
+                    filename='results.csv')
 
 # export my_table to a Python variable
-with postgrez.Export('my_local_db') as e:
-  data = e.export_to_object("my_table")
+with postgrez.Export() as e:
+  data = e.export_to_object(query="my_table")
 print (data)
 ```
 
@@ -158,13 +171,13 @@ import postgrez
 
 # Run execute with variables
 query = 'update my_table set snap_dt=%s where value=%s'
-postgrez.execute('my_local_db', query, ('1900-01-01', 5))
+postgrez.execute(query=query, query_vars=('1900-01-01', 5), setup='my_local_db')
 ```
 
 The most useful part of the execute wrapper is the results parsing and formatting, which eliminates the need for users to parse the column names from the cursor description.
 ```python
-# Run query and return formatted resultset
-data = postgrez.execute('my_local_db', 'select * from my_table limit 10')
+# Run query and return formatted resultset, using default setup
+data = postgrez.execute(query='select * from my_table limit 10')
 print (data)
 
 # Create a temporary table, read results from query into pandas dataframe
@@ -180,7 +193,7 @@ CREATE TEMPORARY TABLE my_temp_table AS (
 SELECT * FROM my_temp_table;
 """
 
-data = postgrez.execute('my_local_db', query)
+data = postgrez.execute(query=query)
 df = pd.DataFrame(data)
 df.head()
 ```
@@ -194,10 +207,10 @@ import postgrez
 
 # load Python list into my_table
 data = [(1, 2, 3), (4, 5, 6)]
-postgrez.load('my_local_db', 'my_table', data=data)
+postgrez.load(table_name='my_table', data=data)
 
 # load csv into my_table
-postgrez.load('my_local_db', 'my_table', filename='my_file.csv')
+postgrez.load(table_name='my_table', filename='my_file.csv')
 ```
 
 #### Export Wrapper
@@ -207,14 +220,14 @@ The export wrapper uses `Export.export_to_file` if a filename is provided. Other
 import postgrez
 
 # export a subset of my_table to local file
-postgrez.export("my_local_db", "select * my_table where snap_dt='2017-01-01'",
+postgrez.export(query="select * my_table where snap_dt='2017-01-01'",
                   filename=results.csv)
 
 # export the snap_dt column of my_table to local file
-postgrez.export("my_local_db", "my_table", filename=results.csv,
+postgrez.export(query="my_table", filename=results.csv,
                   columns=['snap_dt'])
 
 # export my_table to a Python variable
-data = postgrez.export("my_local_db", "my_table")
+data = postgrez.export(query="my_table")
 print (data)
 ```

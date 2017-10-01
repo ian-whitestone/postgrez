@@ -34,10 +34,12 @@ class Connection(object):
         cursor (psycopg2 cursor): psycopg2 cursor object, associated with
             the connection object
     """
-    def __init__(self, setup):
+    def __init__(self, setup='default'):
         """Initialize connection to postgres database.
         Args:
-            setup (str): Name of the db setup to use in ~/.postgrez
+            setup (str): Name of the db setup to use in ~/.postgrez. If no setup
+                is provided, looks for the 'default' key in ~/.postgrez which
+                specifies the default configuration to use.
         """
         self.setup = setup
         self.host = None
@@ -76,6 +78,9 @@ class Connection(object):
         if self.setup not in config.keys():
             raise PostgrezConfigError('Setup variable %s not found in config '
                                         'file' % self.setup)
+
+        if self.setup == 'default':
+            self.setup = config[self.setup]
 
         self.host = config[self.setup].get('host', None)
         self.port = config[self.setup].get('port', 5432)
@@ -161,11 +166,13 @@ class Cmd(Connection):
     """Class which handles execution of queries.
     """
 
-    def __init__(self, setup):
+    def __init__(self, setup='default'):
         """Initialize connection to postgres database.
 
         Args:
-            setup (str): Name of the db setup to use in ~/.postgrez
+            setup (str): Name of the db setup to use in ~/.postgrez. If no setup
+                is provided, looks for the 'default' key in ~/.postgrez which
+                specifies the default configuration to use.
         """
         super(Cmd, self).__init__(setup)
 
@@ -203,11 +210,13 @@ class Load(Connection):
     """Class which handles loading data functionality.
     """
 
-    def __init__(self, setup):
+    def __init__(self, setup='default'):
         """Initialize connection to postgres database.
 
         Args:
-            setup (str): Name of the db setup to use in ~/.postgrez
+            setup (str): Name of the db setup to use in ~/.postgrez. If no setup
+                is provided, looks for the 'default' key in ~/.postgrez which
+                specifies the default configuration to use.
         """
         super(Load, self).__init__(setup)
 
@@ -285,11 +294,13 @@ class Export(Connection):
     """Class which handles exporting data.
     """
 
-    def __init__(self, setup):
+    def __init__(self, setup='default'):
         """Initialize connection to postgres database.
 
         Args:
-            setup (str): Name of the db setup to use in ~/.postgrez
+            setup (str): Name of the db setup to use in ~/.postgrez. If no setup
+                is provided, looks for the 'default' key in ~/.postgrez which
+                specifies the default configuration to use.
         """
         super(Export, self).__init__(setup)
 
