@@ -6,6 +6,7 @@ import sys
 import yaml
 import os
 import io
+import re
 
 
 log = create_logger(__name__)
@@ -32,6 +33,79 @@ def read_yaml(yaml_file):
 
     return data
 
+
+def build_copy_query(mode, query, columns=None, delimiter=',', header=True,
+                        quote=None, null=None):
+    """Build query used in the cursor.copy_expert() method. Refer to
+    https://www.postgresql.org/docs/9.2/static/sql-copy.html for more
+    information.
+
+    Args:
+        mode (str): Specifies whether the copy query is a COPY TO or a COPY FROM
+            query. Accepts 'load' for copy to queries or 'export' for copy from
+            queries.
+        query (str): A select query or a table name
+        columns (list): List of column names to export. columns should only
+            be provided if you are exporting/loading a table
+            (i.e. query = 'table_name'). If query is a query to export, desired
+            columns should be specified in the select portion of that query
+            (i.e. query = 'select col1, col2 from ...'). Defaults to None, in
+            which case all columns will be exported/loaded.
+        delimiter (str): Delimiter to separate columns with. Defaults to ','.
+        header (boolean): Specify True to return the column names when
+            exporting, or when column names are at the top of the flat file
+            being loaded. Defaults to True.
+        quote (str): Specifies the quoting character to be used when a data
+            value is quoted. This must be a single one-byte character.
+            Defaults to None, which uses the postgres default of a single
+            double-quote.
+        null (str): Specifies the string that represents a null value.
+            Defaults to None, which uses the postgres default of an
+            unquoted empty string.
+
+    Returns:
+        copy_query (str): Formatted query to run in copy_expert()
+
+    Raises:
+        Exception: If an error occurs while building hte query.
+    """
+    try:
+        log.info('Building copy query with mode: %s' % mode)
+        if columns:
+            columns = '(' + ','.join(columns) + ')'
+
+        if mode.lower() == 'load':
+            copy_mode = 'FROM STDIN'
+        elif mode.lower() == 'export':
+            copy_mode = 'TO STDOUT'
+        else:
+            log.error("Mode must be 'load' or 'export'. Exiting..")
+            return
+
+        ## check if provided query is a query, or just a table name
+        if re.match('\s*select', query, re.IGNORECASE):
+            if columns:
+                log.warning('If a query is passed in the query arg '
+                            'instead of a tablename, columns must be '
+                            'specified in the query itself')
+                columns = None
+            query = '(' + query + ')'
+
+        copy_query = "COPY {0} {1} {2} WITH DELIMITER '{3}' " \
+                        " CSV {4} {5} {6}"
+
+        copy_query = copy_query.format(
+            query,
+            copy_mode,
+            (columns if columns else ''),
+            delimiter,
+            ('HEADER' if header else ''),
+            ('QUOTE ' + "'{}'".format(quote) if quote else ''),
+            ('NULL ' + "'{}'".format(null) if null else '')
+            )
+        return copy_query
+    except Exception as e:
+        raise Exception('Unable to build query. Error: %s' % (e))
 
 
 class IteratorFile(io.TextIOBase):
