@@ -1,0 +1,357 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>postgrez.wrapper &mdash; postgrez 0.1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="postgrez 0.1.0 documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> postgrez
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">postgrez modules</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">postgrez</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>postgrez.wrapper</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for postgrez.wrapper</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Wrapper module which contains wrapper functions for common psycopg2 routines.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">.postgrez</span> <span class="k">import</span> <span class="n">Connection</span><span class="p">,</span> <span class="n">Cmd</span><span class="p">,</span> <span class="n">Load</span><span class="p">,</span> <span class="n">Export</span><span class="p">,</span> <span class="n">QUERY_LENGTH</span>
+<span class="kn">from</span> <span class="nn">.logger</span> <span class="k">import</span> <span class="n">create_logger</span>
+
+<span class="n">log</span> <span class="o">=</span> <span class="n">create_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<div class="viewcode-block" id="execute"><a class="viewcode-back" href="../../postgrez.html#postgrez.wrapper.execute">[docs]</a><span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">query_vars</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">setup</span><span class="o">=</span><span class="s1">&#39;default&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A wrapper function around Cmd.execute() that returns formatted</span>
+<span class="sd">    results.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        query (str): Query to be executed. Query can contain placeholders,</span>
+<span class="sd">            as long as query_vars are supplied.</span>
+<span class="sd">        query_vars (tuple, list or dict): Variables to be executed with query.</span>
+<span class="sd">            See http://initd.org/psycopg/docs/usage.html#query-parameters.</span>
+<span class="sd">        columns (bool): Return column names in results. Defaults to True.</span>
+<span class="sd">        setup (str): Name of the db setup to use in ~/.postgrez. If no setup</span>
+<span class="sd">            is provided, looks for the &#39;default&#39; key in ~/.postgrez which</span>
+<span class="sd">            specifies the default configuration to use.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        results (list): Results from query.</span>
+<span class="sd">        Returns None if no resultset was generated (i.e. insert into</span>
+<span class="sd">        query, update query etc..).</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        PostgrezExecuteError: If any error occurs reading of resultset.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">with</span> <span class="n">Cmd</span><span class="p">(</span><span class="n">setup</span><span class="p">)</span> <span class="k">as</span> <span class="n">c</span><span class="p">:</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">query_vars</span><span class="p">)</span>
+        <span class="c1"># no way to check if results were returned other than try-except</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">results</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
+        <span class="k">except</span> <span class="n">psycopg2</span><span class="o">.</span><span class="n">ProgrammingError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="c1"># this error is raised when there are no results to fetch</span>
+            <span class="k">pass</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">columns</span> <span class="ow">and</span> <span class="n">results</span><span class="p">:</span>
+                <span class="n">cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">desc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">desc</span> <span class="ow">in</span> <span class="n">c</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">description</span><span class="p">]</span>
+                <span class="n">results</span> <span class="o">=</span> <span class="p">[{</span><span class="n">cols</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span><span class="n">value</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">row</span><span class="p">)}</span>
+                        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">results</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PostgrezExecuteError</span><span class="p">(</span><span class="s1">&#39;Unable to retrieve results query </span><span class="si">%s</span><span class="s1"> &#39;</span>
+                         <span class="s1">&#39;.Error: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">query</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">QUERY_LENGTH</span><span class="p">],</span> <span class="n">e</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">results</span></div>
+
+
+<div class="viewcode-block" id="load"><a class="viewcode-back" href="../../postgrez.html#postgrez.wrapper.load">[docs]</a><span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="n">table_name</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">,</span>
+            <span class="n">columns</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">quote</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">setup</span><span class="o">=</span><span class="s1">&#39;default&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A wrapper function around Load.load_from methods. If a filename is</span>
+<span class="sd">    provided, the records will loaded from that file. Otherwise, records</span>
+<span class="sd">    will be loaded from the supplied data arg.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        table_name (str): name of table to load data into.</span>
+<span class="sd">        filename (str, optional): name of the file. Defaults to None.</span>
+<span class="sd">        data (list, optional): list of tuples, where each row is a tuple.</span>
+<span class="sd">            Defaults to None.</span>
+<span class="sd">        delimiter (str, optional): If a filename is provided, delimiter with</span>
+<span class="sd">            which the columns are separated can be specified. Defaults to &#39;,&#39;</span>
+<span class="sd">        columns (list): iterable with name of the columns to import.</span>
+<span class="sd">            The length and types should match the content of the file to</span>
+<span class="sd">            read. If not specified, it is assumed that the entire table</span>
+<span class="sd">            matches the file structure. Defaults to None.</span>
+<span class="sd">        null (str): Format which nulls (or missing values) are represented.</span>
+<span class="sd">                Defaults to &#39;&#39; if a file is provided, &#39;None&#39; if an object is</span>
+<span class="sd">                provided. See a more detailed explanation in the</span>
+<span class="sd">                Load.load_from_file() or Load.load_from_object() functions.</span>
+<span class="sd">        quote (str): Specifies the quoting character to be used when a data</span>
+<span class="sd">            value is quoted. This must be a single one-byte character.</span>
+<span class="sd">            Defaults to None, which uses the postgres default of a single</span>
+<span class="sd">            double-quote.</span>
+<span class="sd">        header (boolean): Specify True if the first row of the flat file</span>
+<span class="sd">            contains the column names. Defaults to True.</span>
+<span class="sd">        setup (str): Name of the db setup to use in ~/.postgrez. If no setup</span>
+<span class="sd">            is provided, looks for the &#39;default&#39; key in ~/.postgrez which</span>
+<span class="sd">            specifies the default configuration to use.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">filename</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;No filename or data object was supplied. Exiting...&#39;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="k">with</span> <span class="n">Load</span><span class="p">(</span><span class="n">setup</span><span class="p">)</span> <span class="k">as</span> <span class="n">l</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">filename</span><span class="p">:</span>
+            <span class="n">l</span><span class="o">.</span><span class="n">load_from_file</span><span class="p">(</span><span class="n">table_name</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="n">delimiter</span><span class="p">,</span>
+                                <span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="n">null</span><span class="p">,</span> <span class="n">quote</span><span class="o">=</span><span class="n">quote</span><span class="p">,</span>
+                                <span class="n">header</span><span class="o">=</span><span class="n">header</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">l</span><span class="o">.</span><span class="n">load_from_object</span><span class="p">(</span><span class="n">table_name</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="n">null</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="export"><a class="viewcode-back" href="../../postgrez.html#postgrez.wrapper.export">[docs]</a><span class="k">def</span> <span class="nf">export</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">,</span>
+            <span class="n">header</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">setup</span><span class="o">=</span><span class="s1">&#39;default&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A wrapper function around Export.export_to methods. If a filename is</span>
+<span class="sd">    provided, the records will be written to that file. Otherwise, records</span>
+<span class="sd">    will be returned.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        query (str): A select query or a table_name</span>
+<span class="sd">        filename (str, optional): Filename to copy to. Defaults to None.</span>
+<span class="sd">        columns (list): List of column names to export. columns should only</span>
+<span class="sd">            be provided if you are exporting a table</span>
+<span class="sd">            (i.e. query = &#39;table_name&#39;). If query is a query to export, desired</span>
+<span class="sd">            columns should be specified in the select portion of that query</span>
+<span class="sd">            (i.e. query = &#39;select col1, col2 from ...&#39;). Defaults to None.</span>
+<span class="sd">        delimiter (str): Delimiter to separate columns with. Defaults to &#39;,&#39;</span>
+<span class="sd">        header (boolean): Specify True to return the column names. Defaults</span>
+<span class="sd">            to True.</span>
+<span class="sd">        null (str): Specifies the string that represents a null value.</span>
+<span class="sd">            Defaults to None, which uses the postgres default of an</span>
+<span class="sd">            unquoted empty string.</span>
+<span class="sd">        setup (str): Name of the db setup to use in ~/.postgrez. If no setup</span>
+<span class="sd">            is provided, looks for the &#39;default&#39; key in ~/.postgrez which</span>
+<span class="sd">            specifies the default configuration to use.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        data (list): If noe filename is provided, records will be returned.</span>
+<span class="sd">        If header is True, returns list of dicts where each</span>
+<span class="sd">        dict is in the format {col1: val1, col2:val2, ...}. Otherwise,</span>
+<span class="sd">        returns a list of lists where each list is [val1, val2, ...].</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">with</span> <span class="n">Export</span><span class="p">(</span><span class="n">setup</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">filename</span><span class="p">:</span>
+            <span class="n">e</span><span class="o">.</span><span class="n">export_to_file</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="n">filename</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">,</span>
+                                <span class="n">delimiter</span><span class="o">=</span><span class="n">delimiter</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">header</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="n">null</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">export_to_object</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="n">null</span><span class="p">,</span>
+                                        <span class="n">delimiter</span><span class="o">=</span><span class="n">delimiter</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">header</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">data</span></div>
+</pre></div>
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Ian Whitestone.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.1.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

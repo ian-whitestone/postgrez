@@ -1,0 +1,808 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>postgrez &mdash; postgrez 0.1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="postgrez 0.1.0 documentation" href="index.html"/>
+        <link rel="up" title="postgrez" href="modules.html"/>
+        <link rel="prev" title="postgrez" href="modules.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> postgrez
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">postgrez modules</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">postgrez</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-postgrez.postgrez">postgrez.postgrez module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-postgrez.wrapper">postgrez.wrapper module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-postgrez.utils">postgrez.utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-postgrez.logger">postgrez.logger module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-postgrez.exceptions">postgrez.exceptions module</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">postgrez</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="modules.html">postgrez</a> &raquo;</li>
+        
+      <li>postgrez</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/postgrez.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="postgrez">
+<h1>postgrez<a class="headerlink" href="#postgrez" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-postgrez.postgrez">
+<span id="postgrez-postgrez-module"></span><h2>postgrez.postgrez module<a class="headerlink" href="#module-postgrez.postgrez" title="Permalink to this headline">¶</a></h2>
+<p>Main postgrez module, contains 4 core classes: Connection, Cmd, Export and Load.</p>
+<dl class="class">
+<dt id="postgrez.postgrez.Cmd">
+<em class="property">class </em><code class="descclassname">postgrez.postgrez.</code><code class="descname">Cmd</code><span class="sig-paren">(</span><em>setup='default'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/postgrez/postgrez.html#Cmd"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#postgrez.postgrez.Cmd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#postgrez.postgrez.Connection" title="postgrez.postgrez.Connection"><code class="xref py py-class docutils literal"><span class="pre">postgrez.postgrez.Connection</span></code></a></p>
+<p>Class which handles execution of queries.</p>
+<dl class="method">
+<dt id="postgrez.postgrez.Cmd.execute">
+<code class="descname">execute</code><span class="sig-paren">(</span><em>query</em>, <em>query_vars=None</em>, <em>commit=True</em>, <em>columns=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/postgrez/postgrez.html#Cmd.execute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#postgrez.postgrez.Cmd.execute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute the supplied query.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>query</strong> (<em>str</em>) – Query to be executed. Query can contain placeholders,
+as long as query_vars are supplied.</li>
+<li><strong>query_vars</strong> (<em>tuple</em><em>, </em><em>list</em><em> or </em><em>dict</em>) – Variables to be executed with query.
+See <a class="reference external" href="http://initd.org/psycopg/docs/usage.html#query-parameters">http://initd.org/psycopg/docs/usage.html#query-parameters</a>.</li>
+<li><strong>commit</strong> (<em>bool</em>) – Commit any pending transaction to the database.
+Defaults to True.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
+<li><code class="xref py py-exc docutils literal"><span class="pre">PostgrezConnectionError</span></code> – If no connection has been established.</li>
+<li><code class="xref py py-exc docutils literal"><span class="pre">PostgrezExecuteError</span></code> – If any error occurs during execution of query.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="postgrez.postgrez.Connection">
+<em class="property">class </em><code class="descclassname">postgrez.postgrez.</code><code class="descname">Connection</code><span class="sig-paren">(</span><em>setup='default'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/postgrez/postgrez.html#Connection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#postgrez.postgrez.Connection" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Class which establishes connections to a PostgresSQL database.</p>
+<p>Methods used internally by the class are prefixed with a <cite>_</cite>.</p>
+<dl class="attribute">
+<dt id="postgrez.postgrez.Connection.host">
+<code class="descname">host</code><a class="headerlink" href="#postgrez.postgrez.Connection.host" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em> – Database host address</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="postgrez.postgrez.Connection.port">
+<code class="descname">port</code><a class="headerlink" href="#postgrez.postgrez.Connection.port" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>int</em> – Connection port number (defaults to 5432 if not provided)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="postgrez.postgrez.Connection.database">
+<code class="descname">database</code><a class="headerlink" href="#postgrez.postgrez.Connection.database" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em> – Name of the database</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="postgrez.postgrez.Connection.user">
+<code class="descname">user</code><a class="headerlink" href="#postgrez.postgrez.Connection.user" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em> – Username used to authenticate</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="postgrez.postgrez.Connection.password">
+<code class="descname">password</code><a class="headerlink" href="#postgrez.postgrez.Connection.password" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str, optional</em> – Password used to authenticate</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="postgrez.postgrez.Connection.conn">
+<code class="descname">conn</code><a class="headerlink" href="#postgrez.postgrez.Connection.conn" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>psycopg2 connection</em> – psycopg2 connection object</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="postgrez.postgrez.Connection.cursor">
+<code class="descname">cursor</code><a class="headerlink" href="#postgrez.postgrez.Connection.cursor" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>psycopg2 cursor</em> – psycopg2 cursor object, associated with
+the connection object</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="postgrez.postgrez.Export">
+<em class="property">class </em><code class="descclassname">postgrez.postgrez.</code><code class="descname">Export</code><span class="sig-paren">(</span><em>setup='default'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/postgrez/postgrez.html#Export"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#postgrez.postgrez.Export" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#postgrez.postgrez.Connection" title="postgrez.postgrez.Connection"><code class="xref py py-class docutils literal"><span class="pre">postgrez.postgrez.Connection</span></code></a></p>
+<p>Class which handles exporting data.</p>
+<dl class="method">
+<dt id="postgrez.postgrez.Export.export_to_file">
+<code class="descname">export_to_file</code><span class="sig-paren">(</span><em>query</em>, <em>filename</em>, <em>columns=None</em>, <em>delimiter='</em>, <em>'</em>, <em>header=True</em>, <em>null=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/postgrez/postgrez.html#Export.export_to_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#postgrez.postgrez.Export.export_to_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Export records from a table or query to a local file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>query</strong> (<em>str</em>) – A select query or a table</li>
+<li><strong>columns</strong> (<em>list</em>) – List of column names to export. columns should only
+be provided if you are exporting a table
+(i.e. query = ‘table_name’). If query is a query to export, desired
+columns should be specified in the select portion of that query
+(i.e. query = ‘select col1, col2 from …’). Defaults to None.</li>
+<li><strong>filename</strong> (<em>str</em>) – Filename to copy to.</li>
+<li><strong>delimiter</strong> (<em>str</em>) – Delimiter to separate columns with. Defaults to ‘,’.</li>
+<li><strong>header</strong> (<em>boolean</em>) – Specify True to return the column names. Defaults
+to True.</li>
+<li><strong>null</strong> (<em>str</em>) – Specifies the string that represents a null value.
+Defaults to None, which uses the postgres default of an
+unquoted empty string.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal"><span class="pre">PostgrezExportError</span></code> – If an error occurs while exporting to the file.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="postgrez.postgrez.Export.export_to_object">
+<code class="descname">export_to_object</code><span class="sig-paren">(</span><em>query</em>, <em>columns=None</em>, <em>delimiter='</em>, <em>'</em>, <em>header=True</em>, <em>null=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/postgrez/postgrez.html#Export.export_to_object"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#postgrez.postgrez.Export.export_to_object" title="Permalink to this definition">¶</a></dt>
+<dd><p>Export records from a table or query and returns list of records.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>query</strong> (<em>str</em>) – A select query or a table_name</li>
+<li><strong>columns</strong> (<em>list</em>) – List of column names to export. columns should only
+be provided if you are exporting a table
+(i.e. query = ‘table_name’). If query is a query to export, desired
+columns should be specified in the select portion of that query
+(i.e. query = ‘select col1, col2 from …’). Defaults to None.</li>
+<li><strong>delimiter</strong> (<em>str</em>) – Delimiter to separate columns with. Defaults to ‘,’</li>
+<li><strong>header</strong> (<em>boolean</em>) – Specify True to return the column names. Defaults
+to True.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">If header is True, returns list of dicts where each
+dict is in the format {col1: val1, col2:val2, …}. Otherwise,
+returns a list of lists where each list is [val1, val2, …].</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">data (list)</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal"><span class="pre">PostgrezExportError</span></code> – If an error occurs while exporting to an object.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="postgrez.postgrez.Load">
+<em class="property">class </em><code class="descclassname">postgrez.postgrez.</code><code class="descname">Load</code><span class="sig-paren">(</span><em>setup='default'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/postgrez/postgrez.html#Load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#postgrez.postgrez.Load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#postgrez.postgrez.Connection" title="postgrez.postgrez.Connection"><code class="xref py py-class docutils literal"><span class="pre">postgrez.postgrez.Connection</span></code></a></p>
+<p>Class which handles loading data functionality.</p>
+<dl class="method">
+<dt id="postgrez.postgrez.Load.load_from_file">
+<code class="descname">load_from_file</code><span class="sig-paren">(</span><em>table_name</em>, <em>filename</em>, <em>header=True</em>, <em>delimiter='</em>, <em>'</em>, <em>columns=None</em>, <em>quote=None</em>, <em>null=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/postgrez/postgrez.html#Load.load_from_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#postgrez.postgrez.Load.load_from_file" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>table_name</strong> (<em>str</em>) – name of table to load data into.</li>
+<li><strong>filename</strong> (<em>str</em>) – name of the file</li>
+<li><strong>header</strong> (<em>boolean</em>) – Specify True if the first row of the flat file
+contains the column names. Defaults to True.</li>
+<li><strong>delimiter</strong> (<em>str</em>) – delimiter with which the columns are separated.
+Defaults to ‘,’</li>
+<li><strong>columns</strong> (<em>list</em>) – iterable with name of the columns to import.
+The length and types should match the content of the file to
+read. If not specified, it is assumed that the entire table
+matches the file structure. Defaults to None.</li>
+<li><strong>quote</strong> (<em>str</em>) – Specifies the quoting character to be used when a data
+value is quoted. This must be a single one-byte character.
+Defaults to None, which uses the postgres default of a single
+double-quote.</li>
+<li><strong>null</strong> (<em>str</em>) – <p>Format which nulls (or missing values) are represented.
+Defaults to None, which corresponds to an empty string.
+If a CSV file contains a row like:</p>
+<p>,1,2017-05-01,25.321</p>
+<p>it will treat the first element as missing and inject a Null
+value into the database for the corresponding column.</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal"><span class="pre">PostgrezLoadError</span></code> – If an error occurs while loading.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="postgrez.postgrez.Load.load_from_object">
+<code class="descname">load_from_object</code><span class="sig-paren">(</span><em>table_name</em>, <em>data</em>, <em>columns=None</em>, <em>null=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/postgrez/postgrez.html#Load.load_from_object"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#postgrez.postgrez.Load.load_from_object" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load data into a Postgres table from a python list.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>table_name</strong> (<em>str</em>) – name of table to load data into.</li>
+<li><strong>data</strong> (<em>list</em>) – list of tuples, where each row is a tuple</li>
+<li><strong>columns</strong> (<em>list</em>) – iterable with name of the columns to import.
+The length and types should match the content of the file to
+read. If not specified, it is assumed that the entire table
+matches the file structure. Defaults to None.</li>
+<li><strong>null</strong> (<em>str</em>) – Format which nulls (or missing values) are represented.
+Defaults to ‘None’. If a row is passed in as
+[None, 1, ‘2017-05-01’, 25.321], it will treat the first
+element as missing and inject a Null value into the database for
+the corresponding column.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal"><span class="pre">PostgrezLoadError</span></code> – If an error occurs while loading.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-postgrez.wrapper">
+<span id="postgrez-wrapper-module"></span><h2>postgrez.wrapper module<a class="headerlink" href="#module-postgrez.wrapper" title="Permalink to this headline">¶</a></h2>
+<p>Wrapper module which contains wrapper functions for common psycopg2 routines.</p>
+<dl class="function">
+<dt id="postgrez.wrapper.execute">
+<code class="descclassname">postgrez.wrapper.</code><code class="descname">execute</code><span class="sig-paren">(</span><em>query</em>, <em>query_vars=None</em>, <em>columns=True</em>, <em>setup='default'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/postgrez/wrapper.html#execute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#postgrez.wrapper.execute" title="Permalink to this definition">¶</a></dt>
+<dd><p>A wrapper function around Cmd.execute() that returns formatted
+results.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>query</strong> (<em>str</em>) – Query to be executed. Query can contain placeholders,
+as long as query_vars are supplied.</li>
+<li><strong>query_vars</strong> (<em>tuple</em><em>, </em><em>list</em><em> or </em><em>dict</em>) – Variables to be executed with query.
+See <a class="reference external" href="http://initd.org/psycopg/docs/usage.html#query-parameters">http://initd.org/psycopg/docs/usage.html#query-parameters</a>.</li>
+<li><strong>columns</strong> (<em>bool</em>) – Return column names in results. Defaults to True.</li>
+<li><strong>setup</strong> (<em>str</em>) – Name of the db setup to use in ~/.postgrez. If no setup
+is provided, looks for the ‘default’ key in ~/.postgrez which
+specifies the default configuration to use.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Results from query.
+Returns None if no resultset was generated (i.e. insert into
+query, update query etc..).</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">results (list)</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal"><span class="pre">PostgrezExecuteError</span></code> – If any error occurs reading of resultset.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="postgrez.wrapper.export">
+<code class="descclassname">postgrez.wrapper.</code><code class="descname">export</code><span class="sig-paren">(</span><em>query</em>, <em>filename=None</em>, <em>columns=None</em>, <em>delimiter='</em>, <em>'</em>, <em>header=True</em>, <em>null=None</em>, <em>setup='default'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/postgrez/wrapper.html#export"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#postgrez.wrapper.export" title="Permalink to this definition">¶</a></dt>
+<dd><p>A wrapper function around Export.export_to methods. If a filename is
+provided, the records will be written to that file. Otherwise, records
+will be returned.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>query</strong> (<em>str</em>) – A select query or a table_name</li>
+<li><strong>filename</strong> (<em>str</em><em>, </em><em>optional</em>) – Filename to copy to. Defaults to None.</li>
+<li><strong>columns</strong> (<em>list</em>) – List of column names to export. columns should only
+be provided if you are exporting a table
+(i.e. query = ‘table_name’). If query is a query to export, desired
+columns should be specified in the select portion of that query
+(i.e. query = ‘select col1, col2 from …’). Defaults to None.</li>
+<li><strong>delimiter</strong> (<em>str</em>) – Delimiter to separate columns with. Defaults to ‘,’</li>
+<li><strong>header</strong> (<em>boolean</em>) – Specify True to return the column names. Defaults
+to True.</li>
+<li><strong>null</strong> (<em>str</em>) – Specifies the string that represents a null value.
+Defaults to None, which uses the postgres default of an
+unquoted empty string.</li>
+<li><strong>setup</strong> (<em>str</em>) – Name of the db setup to use in ~/.postgrez. If no setup
+is provided, looks for the ‘default’ key in ~/.postgrez which
+specifies the default configuration to use.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">If noe filename is provided, records will be returned.
+If header is True, returns list of dicts where each
+dict is in the format {col1: val1, col2:val2, …}. Otherwise,
+returns a list of lists where each list is [val1, val2, …].</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">data (list)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="postgrez.wrapper.load">
+<code class="descclassname">postgrez.wrapper.</code><code class="descname">load</code><span class="sig-paren">(</span><em>table_name</em>, <em>filename=None</em>, <em>data=None</em>, <em>delimiter='</em>, <em>'</em>, <em>columns=None</em>, <em>quote=None</em>, <em>null=None</em>, <em>header=True</em>, <em>setup='default'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/postgrez/wrapper.html#load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#postgrez.wrapper.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>A wrapper function around Load.load_from methods. If a filename is
+provided, the records will loaded from that file. Otherwise, records
+will be loaded from the supplied data arg.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>table_name</strong> (<em>str</em>) – name of table to load data into.</li>
+<li><strong>filename</strong> (<em>str</em><em>, </em><em>optional</em>) – name of the file. Defaults to None.</li>
+<li><strong>data</strong> (<em>list</em><em>, </em><em>optional</em>) – list of tuples, where each row is a tuple.
+Defaults to None.</li>
+<li><strong>delimiter</strong> (<em>str</em><em>, </em><em>optional</em>) – If a filename is provided, delimiter with
+which the columns are separated can be specified. Defaults to ‘,’</li>
+<li><strong>columns</strong> (<em>list</em>) – iterable with name of the columns to import.
+The length and types should match the content of the file to
+read. If not specified, it is assumed that the entire table
+matches the file structure. Defaults to None.</li>
+<li><strong>null</strong> (<em>str</em>) – Format which nulls (or missing values) are represented.
+Defaults to ‘’ if a file is provided, ‘None’ if an object is
+provided. See a more detailed explanation in the
+Load.load_from_file() or Load.load_from_object() functions.</li>
+<li><strong>quote</strong> (<em>str</em>) – Specifies the quoting character to be used when a data
+value is quoted. This must be a single one-byte character.
+Defaults to None, which uses the postgres default of a single
+double-quote.</li>
+<li><strong>header</strong> (<em>boolean</em>) – Specify True if the first row of the flat file
+contains the column names. Defaults to True.</li>
+<li><strong>setup</strong> (<em>str</em>) – Name of the db setup to use in ~/.postgrez. If no setup
+is provided, looks for the ‘default’ key in ~/.postgrez which
+specifies the default configuration to use.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-postgrez.utils">
+<span id="postgrez-utils-module"></span><h2>postgrez.utils module<a class="headerlink" href="#module-postgrez.utils" title="Permalink to this headline">¶</a></h2>
+<p>Utils module, contains utility functions used throughout the postgrez codebase.</p>
+<dl class="class">
+<dt id="postgrez.utils.IteratorFile">
+<em class="property">class </em><code class="descclassname">postgrez.utils.</code><code class="descname">IteratorFile</code><span class="sig-paren">(</span><em>it</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/postgrez/utils.html#IteratorFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#postgrez.utils.IteratorFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">io.TextIOBase</span></code></p>
+<p>Given an iterator which yields strings, return a file like object for
+reading those strings. Taken from:
+<a class="reference external" href="https://gist.github.com/jsheedy/ed81cdf18190183b3b7d">https://gist.github.com/jsheedy/ed81cdf18190183b3b7d</a></p>
+<dl class="attribute">
+<dt id="postgrez.utils.IteratorFile._it">
+<code class="descname">_it</code><a class="headerlink" href="#postgrez.utils.IteratorFile._it" title="Permalink to this definition">¶</a></dt>
+<dd><p>Iterator of a data object.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="postgrez.utils.IteratorFile._f">
+<code class="descname">_f</code><a class="headerlink" href="#postgrez.utils.IteratorFile._f" title="Permalink to this definition">¶</a></dt>
+<dd><p>File-like object</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="postgrez.utils.IteratorFile.read">
+<code class="descname">read</code><span class="sig-paren">(</span><em>length=9223372036854775807</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/postgrez/utils.html#IteratorFile.read"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#postgrez.utils.IteratorFile.read" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read file-like object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>length</strong> (<em>integer</em>) – maximum file length to read to</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">string representation of file</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">data (str)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="postgrez.utils.build_copy_query">
+<code class="descclassname">postgrez.utils.</code><code class="descname">build_copy_query</code><span class="sig-paren">(</span><em>mode</em>, <em>query</em>, <em>columns=None</em>, <em>delimiter='</em>, <em>'</em>, <em>header=True</em>, <em>quote=None</em>, <em>null=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/postgrez/utils.html#build_copy_query"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#postgrez.utils.build_copy_query" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build query used in the cursor.copy_expert() method. Refer to
+<a class="reference external" href="https://www.postgresql.org/docs/9.2/static/sql-copy.html">https://www.postgresql.org/docs/9.2/static/sql-copy.html</a> for more
+information.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>mode</strong> (<em>str</em>) – Specifies whether the copy query is a COPY TO or a COPY FROM
+query. Accepts ‘load’ for copy to queries or ‘export’ for copy from
+queries.</li>
+<li><strong>query</strong> (<em>str</em>) – A select query or a table name</li>
+<li><strong>columns</strong> (<em>list</em>) – List of column names to export. columns should only
+be provided if you are exporting/loading a table
+(i.e. query = ‘table_name’). If query is a query to export, desired
+columns should be specified in the select portion of that query
+(i.e. query = ‘select col1, col2 from …’). Defaults to None, in
+which case all columns will be exported/loaded.</li>
+<li><strong>delimiter</strong> (<em>str</em>) – Delimiter to separate columns with. Defaults to ‘,’.</li>
+<li><strong>header</strong> (<em>boolean</em>) – Specify True to return the column names when
+exporting, or when column names are at the top of the flat file
+being loaded. Defaults to True.</li>
+<li><strong>quote</strong> (<em>str</em>) – Specifies the quoting character to be used when a data
+value is quoted. This must be a single one-byte character.
+Defaults to None, which uses the postgres default of a single
+double-quote.</li>
+<li><strong>null</strong> (<em>str</em>) – Specifies the string that represents a null value.
+Defaults to None, which uses the postgres default of an
+unquoted empty string.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Formatted query to run in copy_expert()</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">copy_query (str)</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal"><span class="pre">Exception</span></code> – If an error occurs while building hte query.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="postgrez.utils.read_yaml">
+<code class="descclassname">postgrez.utils.</code><code class="descname">read_yaml</code><span class="sig-paren">(</span><em>yaml_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/postgrez/utils.html#read_yaml"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#postgrez.utils.read_yaml" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read a yaml file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>yaml_file</strong> (<em>str</em>) – Full path of the yaml file.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Dictionary of yaml_file contents. None is returned if an
+error occurs while reading.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">data (dict)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><code class="xref py py-exc docutils literal"><span class="pre">Exception</span></code> – If the yaml_file cannot be opened.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-postgrez.logger">
+<span id="postgrez-logger-module"></span><h2>postgrez.logger module<a class="headerlink" href="#module-postgrez.logger" title="Permalink to this headline">¶</a></h2>
+<p>Logger module used to create logging objects.</p>
+<dl class="function">
+<dt id="postgrez.logger.create_logger">
+<code class="descclassname">postgrez.logger.</code><code class="descname">create_logger</code><span class="sig-paren">(</span><em>name=None</em>, <em>log_level='INFO'</em>, <em>log_format='%(asctime)s  - %(module)s - %(levelname)s - %(message)s'</em>, <em>log_filename=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/postgrez/logger.html#create_logger"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#postgrez.logger.create_logger" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a logging object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>name</strong> (<em>str</em><em>, </em><em>optional</em>) – The name of the logger. Defaults to <code class="docutils literal"><span class="pre">None</span></code></li>
+<li><strong>log_level</strong> (<em>str</em><em>, </em><em>optional</em>) – The logging level. Defaults to <code class="docutils literal"><span class="pre">INFO</span></code>
+Accepts: DEBUG, INFO, WARNING, ERROR, CRITICAL</li>
+<li><strong>format</strong> (<em>str</em><em>, </em><em>optional</em>) – Logging format. Defaults to
+<code class="docutils literal"><span class="pre">%(asctime)s</span>&#160; <span class="pre">-</span> <span class="pre">%(module)s</span> <span class="pre">-</span> <span class="pre">%(levelname)s</span> <span class="pre">-</span> <span class="pre">%(message)s</span></code></li>
+<li><strong>log_filename</strong> (<em>str</em><em>, </em><em>optional</em>) – Filename to stream log to. Defaults to
+None and streams to sys.stdout</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Logger object, configured with the passed in parameters.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">logging.Logger</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-postgrez.exceptions">
+<span id="postgrez-exceptions-module"></span><h2>postgrez.exceptions module<a class="headerlink" href="#module-postgrez.exceptions" title="Permalink to this headline">¶</a></h2>
+<p>Exceptions module, contains custom Postgrez exceptions.
+Reference: <a class="reference external" href="https://www.programiz.com/python-programming/user-defined-exception">https://www.programiz.com/python-programming/user-defined-exception</a></p>
+<dl class="exception">
+<dt id="postgrez.exceptions.Postgrez">
+<em class="property">exception </em><code class="descclassname">postgrez.exceptions.</code><code class="descname">Postgrez</code><a class="reference internal" href="_modules/postgrez/exceptions.html#Postgrez"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#postgrez.exceptions.Postgrez" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
+<p>Base class for Postgrez errors.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="postgrez.exceptions.PostgrezConfigError">
+<em class="property">exception </em><code class="descclassname">postgrez.exceptions.</code><code class="descname">PostgrezConfigError</code><a class="reference internal" href="_modules/postgrez/exceptions.html#PostgrezConfigError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#postgrez.exceptions.PostgrezConfigError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#postgrez.exceptions.Postgrez" title="postgrez.exceptions.Postgrez"><code class="xref py py-class docutils literal"><span class="pre">postgrez.exceptions.Postgrez</span></code></a></p>
+<p>Raised when there is an error with the postgrez config file
+~/.postgrez</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="postgrez.exceptions.PostgrezConnectionError">
+<em class="property">exception </em><code class="descclassname">postgrez.exceptions.</code><code class="descname">PostgrezConnectionError</code><a class="reference internal" href="_modules/postgrez/exceptions.html#PostgrezConnectionError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#postgrez.exceptions.PostgrezConnectionError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#postgrez.exceptions.Postgrez" title="postgrez.exceptions.Postgrez"><code class="xref py py-class docutils literal"><span class="pre">postgrez.exceptions.Postgrez</span></code></a></p>
+<p>Raised when a function is called that requires a connection, but no
+connection is present.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="postgrez.exceptions.PostgrezExecuteError">
+<em class="property">exception </em><code class="descclassname">postgrez.exceptions.</code><code class="descname">PostgrezExecuteError</code><a class="reference internal" href="_modules/postgrez/exceptions.html#PostgrezExecuteError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#postgrez.exceptions.PostgrezExecuteError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#postgrez.exceptions.Postgrez" title="postgrez.exceptions.Postgrez"><code class="xref py py-class docutils literal"><span class="pre">postgrez.exceptions.Postgrez</span></code></a></p>
+<p>Raised when there is an error running the Cmd.execute() function.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="postgrez.exceptions.PostgrezExportError">
+<em class="property">exception </em><code class="descclassname">postgrez.exceptions.</code><code class="descname">PostgrezExportError</code><a class="reference internal" href="_modules/postgrez/exceptions.html#PostgrezExportError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#postgrez.exceptions.PostgrezExportError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#postgrez.exceptions.Postgrez" title="postgrez.exceptions.Postgrez"><code class="xref py py-class docutils literal"><span class="pre">postgrez.exceptions.Postgrez</span></code></a></p>
+<p>Raised when there is an error running the Export.export_to() functions.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="postgrez.exceptions.PostgrezLoadError">
+<em class="property">exception </em><code class="descclassname">postgrez.exceptions.</code><code class="descname">PostgrezLoadError</code><a class="reference internal" href="_modules/postgrez/exceptions.html#PostgrezLoadError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#postgrez.exceptions.PostgrezLoadError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#postgrez.exceptions.Postgrez" title="postgrez.exceptions.Postgrez"><code class="xref py py-class docutils literal"><span class="pre">postgrez.exceptions.Postgrez</span></code></a></p>
+<p>Raised when there is an error running the Load.load_from() functions.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="modules.html" class="btn btn-neutral" title="postgrez" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Ian Whitestone.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.1.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

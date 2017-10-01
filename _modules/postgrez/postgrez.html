@@ -1,0 +1,628 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>postgrez.postgrez &mdash; postgrez 0.1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="postgrez 0.1.0 documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> postgrez
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">postgrez modules</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">postgrez</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>postgrez.postgrez</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for postgrez.postgrez</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Main postgrez module, contains 4 core classes: Connection, Cmd, Export and Load.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">psycopg2</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="k">import</span> <span class="n">read_yaml</span><span class="p">,</span> <span class="n">IteratorFile</span><span class="p">,</span> <span class="n">build_copy_query</span>
+<span class="kn">from</span> <span class="nn">.exceptions</span> <span class="k">import</span> <span class="p">(</span><span class="n">PostgrezConfigError</span><span class="p">,</span> <span class="n">PostgrezConnectionError</span><span class="p">,</span>
+                            <span class="n">PostgrezExecuteError</span><span class="p">,</span> <span class="n">PostgrezLoadError</span><span class="p">,</span>
+                            <span class="n">PostgrezExportError</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.logger</span> <span class="k">import</span> <span class="n">create_logger</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">io</span>
+
+
+<span class="n">log</span> <span class="o">=</span> <span class="n">create_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="c1">## number of characters in query to display</span>
+<span class="n">QUERY_LENGTH</span> <span class="o">=</span> <span class="mi">50</span>
+
+<div class="viewcode-block" id="Connection"><a class="viewcode-back" href="../../postgrez.html#postgrez.postgrez.Connection">[docs]</a><span class="k">class</span> <span class="nc">Connection</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class which establishes connections to a PostgresSQL database.</span>
+
+<span class="sd">    Methods used internally by the class are prefixed with a `_`.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        host (str): Database host address</span>
+<span class="sd">        port (int): Connection port number (defaults to 5432 if not provided)</span>
+<span class="sd">        database (str): Name of the database</span>
+<span class="sd">        user (str): Username used to authenticate</span>
+<span class="sd">        password (str, optional): Password used to authenticate</span>
+<span class="sd">        conn (psycopg2 connection): psycopg2 connection object</span>
+<span class="sd">        cursor (psycopg2 cursor): psycopg2 cursor object, associated with</span>
+<span class="sd">            the connection object</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">setup</span><span class="o">=</span><span class="s1">&#39;default&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize connection to postgres database.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            setup (str): Name of the db setup to use in ~/.postgrez. If no setup</span>
+<span class="sd">                is provided, looks for the &#39;default&#39; key in ~/.postgrez which</span>
+<span class="sd">                specifies the default configuration to use.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup</span> <span class="o">=</span> <span class="n">setup</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">host</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">database</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">user</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">password</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">port</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conn</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1">## Fetch attributes from file</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_attributes</span><span class="p">()</span>
+
+        <span class="c1">## Validate the parsed attributes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_validate_attributes</span><span class="p">()</span>
+
+        <span class="c1">## If no errors are raised, connect to the database</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_connect</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_get_attributes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Read database connection parameters from ~/.postgrez.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            PostgrezConfigError: If the config file ~/.postgrez does not exist.</span>
+<span class="sd">            PostgrezConfigError: If the supplied setup variable is not in the</span>
+<span class="sd">                ~/.postgrez file</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">yaml_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">&#39;~&#39;</span><span class="p">),</span> <span class="s1">&#39;.postgrez&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">yaml_file</span><span class="p">)</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PostgrezConfigError</span><span class="p">(</span><span class="s1">&#39;Unable to find ~/.postgrez config file&#39;</span><span class="p">)</span>
+
+        <span class="n">config</span> <span class="o">=</span> <span class="n">read_yaml</span><span class="p">(</span><span class="n">yaml_file</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">setup</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">config</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">PostgrezConfigError</span><span class="p">(</span><span class="s1">&#39;Setup variable </span><span class="si">%s</span><span class="s1"> not found in config &#39;</span>
+                                        <span class="s1">&#39;file&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">setup</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">setup</span> <span class="o">==</span> <span class="s1">&#39;default&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setup</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">setup</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">host</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">setup</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;host&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">port</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">setup</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;port&#39;</span><span class="p">,</span> <span class="mi">5432</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">database</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">setup</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">user</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">setup</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">password</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">setup</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;password&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_validate_attributes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Validate that the minimum required fields were parsed from</span>
+<span class="sd">            ~/.postgrez</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            PostgrezConfigError: If the minimum attributes were not included</span>
+<span class="sd">                in ~/.postgrez.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">host</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">user</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">database</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PostgrezConfigError</span><span class="p">(</span><span class="s1">&#39;Please provide a host, user and &#39;</span>
+                <span class="s1">&#39;database as a minimum in ~/.postgrez. Please visit &#39;</span>
+                <span class="s1">&#39;https://github.com/ian-whitestone/postgrez for details&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_connected</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Determine if a pscyopg2 connection or cursor has been created.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            connect_status (bool): True of a psycopg2 connection or cursor</span>
+<span class="sd">                object exists.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span><span class="kc">True</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">conn</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span> <span class="k">else</span> <span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_connect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create a connection to a PostgreSQL database.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            Exception: If there is a problem creating a connection.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Establishing connection to </span><span class="si">%s</span><span class="s1"> database&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">database</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">conn</span> <span class="o">=</span> <span class="n">psycopg2</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">host</span><span class="p">,</span>
+                                    <span class="n">port</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">port</span><span class="p">,</span>
+                                    <span class="n">database</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">database</span><span class="p">,</span>
+                                    <span class="n">user</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="p">,</span>
+                                    <span class="n">password</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">password</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Error connecting to database. Error: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+            <span class="k">raise</span>
+
+    <span class="k">def</span> <span class="nf">_disconnect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create a connection to a PostgreSQL database.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            Exception: If there is a problem creating a connection.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Attempting to disconnect from database </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">database</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Error closing cursor. Error: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+            <span class="k">raise</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Error closing connection. Error: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+            <span class="k">raise</span>
+
+    <span class="k">def</span> <span class="nf">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc</span><span class="p">,</span> <span class="n">exc_tb</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Close the cursor and connection objects if they have been created.</span>
+<span class="sd">        This code is automatically executed after the with statement is</span>
+<span class="sd">        completed or if any error arises during the process.</span>
+<span class="sd">        Ref: https://stackoverflow.com/questions/1984325/explaining-pythons-enter-and-exit</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connected</span><span class="p">():</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Attempting to close connection ...&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_disconnect</span><span class="p">()</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Connection closed&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Cmd"><a class="viewcode-back" href="../../postgrez.html#postgrez.postgrez.Cmd">[docs]</a><span class="k">class</span> <span class="nc">Cmd</span><span class="p">(</span><span class="n">Connection</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class which handles execution of queries.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">setup</span><span class="o">=</span><span class="s1">&#39;default&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize connection to postgres database.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            setup (str): Name of the db setup to use in ~/.postgrez. If no setup</span>
+<span class="sd">                is provided, looks for the &#39;default&#39; key in ~/.postgrez which</span>
+<span class="sd">                specifies the default configuration to use.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Cmd</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">setup</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Cmd.execute"><a class="viewcode-back" href="../../postgrez.html#postgrez.postgrez.Cmd.execute">[docs]</a>    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="n">query_vars</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">commit</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Execute the supplied query.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            query (str): Query to be executed. Query can contain placeholders,</span>
+<span class="sd">                as long as query_vars are supplied.</span>
+<span class="sd">            query_vars (tuple, list or dict): Variables to be executed with query.</span>
+<span class="sd">                See http://initd.org/psycopg/docs/usage.html#query-parameters.</span>
+<span class="sd">            commit (bool): Commit any pending transaction to the database.</span>
+<span class="sd">                Defaults to True.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            PostgrezConnectionError: If no connection has been established.</span>
+<span class="sd">            PostgrezExecuteError: If any error occurs during execution of query.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connected</span><span class="p">()</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PostgrezConnectionError</span><span class="p">(</span><span class="s1">&#39;No connection has been established&#39;</span><span class="p">)</span>
+
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Executing query </span><span class="si">%s</span><span class="s1">...&#39;</span> <span class="o">%</span> <span class="n">query</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">QUERY_LENGTH</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="nb">vars</span><span class="o">=</span><span class="n">query_vars</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">commit</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PostgrezExecuteError</span><span class="p">(</span><span class="s1">&#39;Unable to execute query </span><span class="si">%s</span><span class="s1"> due to &#39;</span>
+                         <span class="s1">&#39;Error: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">query</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">QUERY_LENGTH</span><span class="p">],</span> <span class="n">e</span><span class="p">))</span></div></div>
+
+
+<div class="viewcode-block" id="Load"><a class="viewcode-back" href="../../postgrez.html#postgrez.postgrez.Load">[docs]</a><span class="k">class</span> <span class="nc">Load</span><span class="p">(</span><span class="n">Connection</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class which handles loading data functionality.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">setup</span><span class="o">=</span><span class="s1">&#39;default&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize connection to postgres database.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            setup (str): Name of the db setup to use in ~/.postgrez. If no setup</span>
+<span class="sd">                is provided, looks for the &#39;default&#39; key in ~/.postgrez which</span>
+<span class="sd">                specifies the default configuration to use.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Load</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">setup</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Load.load_from_object"><a class="viewcode-back" href="../../postgrez.html#postgrez.postgrez.Load.load_from_object">[docs]</a>    <span class="k">def</span> <span class="nf">load_from_object</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">table_name</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Load data into a Postgres table from a python list.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            table_name (str): name of table to load data into.</span>
+<span class="sd">            data (list): list of tuples, where each row is a tuple</span>
+<span class="sd">            columns (list): iterable with name of the columns to import.</span>
+<span class="sd">                The length and types should match the content of the file to</span>
+<span class="sd">                read. If not specified, it is assumed that the entire table</span>
+<span class="sd">                matches the file structure. Defaults to None.</span>
+<span class="sd">            null (str): Format which nulls (or missing values) are represented.</span>
+<span class="sd">                Defaults to &#39;None&#39;. If a row is passed in as</span>
+<span class="sd">                [None, 1, &#39;2017-05-01&#39;, 25.321], it will treat the first</span>
+<span class="sd">                element as missing and inject a Null value into the database for</span>
+<span class="sd">                the corresponding column.</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            PostgrezLoadError: If an error occurs while loading.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Attempting to load </span><span class="si">%s</span><span class="s1"> records into table </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
+                        <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">table_name</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">null</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">null</span> <span class="o">=</span> <span class="s1">&#39;None&#39;</span>
+
+            <span class="n">table_width</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">template_string</span> <span class="o">=</span> <span class="s2">&quot;|&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">table_width</span><span class="p">)</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="n">IteratorFile</span><span class="p">((</span><span class="n">template_string</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">*</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">data</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">copy_from</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">table_name</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s2">&quot;|&quot;</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="n">null</span><span class="p">,</span>
+                                    <span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PostgrezLoadError</span><span class="p">(</span><span class="s2">&quot;Unable to load data to Postgres. &quot;</span>
+                <span class="s2">&quot;Error: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">e</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Load.load_from_file"><a class="viewcode-back" href="../../postgrez.html#postgrez.postgrez.Load.load_from_file">[docs]</a>    <span class="k">def</span> <span class="nf">load_from_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">table_name</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">,</span>
+                        <span class="n">columns</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">quote</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            table_name (str): name of table to load data into.</span>
+<span class="sd">            filename (str): name of the file</span>
+<span class="sd">            header (boolean): Specify True if the first row of the flat file</span>
+<span class="sd">                contains the column names. Defaults to True.</span>
+<span class="sd">            delimiter (str): delimiter with which the columns are separated.</span>
+<span class="sd">                Defaults to &#39;,&#39;</span>
+<span class="sd">            columns (list): iterable with name of the columns to import.</span>
+<span class="sd">                The length and types should match the content of the file to</span>
+<span class="sd">                read. If not specified, it is assumed that the entire table</span>
+<span class="sd">                matches the file structure. Defaults to None.</span>
+<span class="sd">            quote (str): Specifies the quoting character to be used when a data</span>
+<span class="sd">                value is quoted. This must be a single one-byte character.</span>
+<span class="sd">                Defaults to None, which uses the postgres default of a single</span>
+<span class="sd">                double-quote.</span>
+<span class="sd">            null (str): Format which nulls (or missing values) are represented.</span>
+<span class="sd">                Defaults to None, which corresponds to an empty string.</span>
+<span class="sd">                If a CSV file contains a row like:</span>
+
+<span class="sd">                ,1,2017-05-01,25.321</span>
+
+<span class="sd">                it will treat the first element as missing and inject a Null</span>
+<span class="sd">                value into the database for the corresponding column.</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            PostgrezLoadError: If an error occurs while loading.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Attempting to load file </span><span class="si">%s</span><span class="s1">  into table </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
+                        <span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">table_name</span><span class="p">))</span>
+
+            <span class="n">copy_query</span> <span class="o">=</span> <span class="n">build_copy_query</span><span class="p">(</span><span class="s1">&#39;load&#39;</span><span class="p">,</span> <span class="n">table_name</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">header</span><span class="p">,</span>
+                                        <span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="n">delimiter</span><span class="p">,</span>
+                                        <span class="n">quote</span><span class="o">=</span><span class="n">quote</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="n">null</span><span class="p">)</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Executing copy query</span><span class="se">\n</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">copy_query</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">copy_expert</span><span class="p">(</span><span class="n">copy_query</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PostgrezLoadError</span><span class="p">(</span><span class="s2">&quot;Unable to load file to Postgres. &quot;</span>
+                <span class="s2">&quot;Error: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">e</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="Export"><a class="viewcode-back" href="../../postgrez.html#postgrez.postgrez.Export">[docs]</a><span class="k">class</span> <span class="nc">Export</span><span class="p">(</span><span class="n">Connection</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class which handles exporting data.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">setup</span><span class="o">=</span><span class="s1">&#39;default&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize connection to postgres database.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            setup (str): Name of the db setup to use in ~/.postgrez. If no setup</span>
+<span class="sd">                is provided, looks for the &#39;default&#39; key in ~/.postgrez which</span>
+<span class="sd">                specifies the default configuration to use.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Export</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">setup</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Export.export_to_file"><a class="viewcode-back" href="../../postgrez.html#postgrez.postgrez.Export.export_to_file">[docs]</a>    <span class="k">def</span> <span class="nf">export_to_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">,</span>
+                <span class="n">header</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Export records from a table or query to a local file.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            query (str): A select query or a table</span>
+<span class="sd">            columns (list): List of column names to export. columns should only</span>
+<span class="sd">                be provided if you are exporting a table</span>
+<span class="sd">                (i.e. query = &#39;table_name&#39;). If query is a query to export, desired</span>
+<span class="sd">                columns should be specified in the select portion of that query</span>
+<span class="sd">                (i.e. query = &#39;select col1, col2 from ...&#39;). Defaults to None.</span>
+<span class="sd">            filename (str): Filename to copy to.</span>
+<span class="sd">            delimiter (str): Delimiter to separate columns with. Defaults to &#39;,&#39;.</span>
+<span class="sd">            header (boolean): Specify True to return the column names. Defaults</span>
+<span class="sd">                to True.</span>
+<span class="sd">            null (str): Specifies the string that represents a null value.</span>
+<span class="sd">                Defaults to None, which uses the postgres default of an</span>
+<span class="sd">                unquoted empty string.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            PostgrezExportError: If an error occurs while exporting to the file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">copy_query</span> <span class="o">=</span> <span class="n">build_copy_query</span><span class="p">(</span><span class="s1">&#39;export&#39;</span><span class="p">,</span><span class="n">query</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">,</span>
+                                            <span class="n">delimiter</span><span class="o">=</span><span class="n">delimiter</span><span class="p">,</span>
+                                            <span class="n">header</span><span class="o">=</span><span class="n">header</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="n">null</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Running copy_expert with</span><span class="se">\n</span><span class="si">%s</span><span class="se">\n</span><span class="s1">Outputting results to </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
+                        <span class="p">(</span><span class="n">copy_query</span><span class="p">,</span> <span class="n">filename</span><span class="p">))</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Executing copy query</span><span class="se">\n</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">copy_query</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">copy_expert</span><span class="p">(</span><span class="n">copy_query</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PostgrezExportError</span><span class="p">(</span><span class="s1">&#39;Unable to export to file </span><span class="si">%s</span><span class="s1">. Error: </span><span class="si">%s</span><span class="s1">&#39;</span>
+                    <span class="o">%</span> <span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">e</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="Export.export_to_object"><a class="viewcode-back" href="../../postgrez.html#postgrez.postgrez.Export.export_to_object">[docs]</a>    <span class="k">def</span> <span class="nf">export_to_object</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                            <span class="n">null</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Export records from a table or query and returns list of records.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            query (str): A select query or a table_name</span>
+<span class="sd">            columns (list): List of column names to export. columns should only</span>
+<span class="sd">                be provided if you are exporting a table</span>
+<span class="sd">                (i.e. query = &#39;table_name&#39;). If query is a query to export, desired</span>
+<span class="sd">                columns should be specified in the select portion of that query</span>
+<span class="sd">                (i.e. query = &#39;select col1, col2 from ...&#39;). Defaults to None.</span>
+<span class="sd">            delimiter (str): Delimiter to separate columns with. Defaults to &#39;,&#39;</span>
+<span class="sd">            header (boolean): Specify True to return the column names. Defaults</span>
+<span class="sd">                to True.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            data (list): If header is True, returns list of dicts where each</span>
+<span class="sd">            dict is in the format {col1: val1, col2:val2, ...}. Otherwise,</span>
+<span class="sd">            returns a list of lists where each list is [val1, val2, ...].</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            PostgrezExportError: If an error occurs while exporting to an object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">copy_query</span> <span class="o">=</span> <span class="n">build_copy_query</span><span class="p">(</span><span class="s1">&#39;export&#39;</span><span class="p">,</span><span class="n">query</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">,</span>
+                                            <span class="n">delimiter</span><span class="o">=</span><span class="n">delimiter</span><span class="p">,</span>
+                                            <span class="n">header</span><span class="o">=</span><span class="n">header</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="n">null</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Running copy_expert with with</span><span class="se">\n</span><span class="si">%s</span><span class="se">\n</span><span class="s1">Outputting results to &#39;</span>
+                     <span class="s1">&#39;list.&#39;</span> <span class="o">%</span> <span class="n">copy_query</span><span class="p">)</span>
+            <span class="c1"># stream output to local object</span>
+            <span class="n">text_stream</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">StringIO</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">copy_expert</span><span class="p">(</span><span class="n">copy_query</span><span class="p">,</span> <span class="n">text_stream</span><span class="p">)</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">text_stream</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span>
+
+            <span class="c1"># parse output</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">output</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">cols</span> <span class="o">=</span> <span class="n">output</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">delimiter</span><span class="p">)</span>
+            <span class="n">end_index</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">output</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">header</span><span class="p">:</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="p">[{</span><span class="n">cols</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span><span class="n">value</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span>
+                            <span class="nb">enumerate</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">delimiter</span><span class="p">))}</span>
+                            <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">output</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="n">end_index</span><span class="p">]]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="n">row</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">delimiter</span><span class="p">)</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">output</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PostgrezExportError</span><span class="p">(</span><span class="s1">&#39;Unable to export to object. Error: </span><span class="si">%s</span><span class="s1">&#39;</span>
+                    <span class="o">%</span> <span class="p">(</span><span class="n">e</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">data</span></div></div>
+</pre></div>
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Ian Whitestone.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.1.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
