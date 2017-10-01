@@ -1,10 +1,8 @@
-
-
 sphinx:
 	cd docs && \
 	make html
 
-gh-phages:
+gh-pages:
 	git checkout gh-pages && \
 	cp -r docs/build/html/* . && \
 	git add -A . && \
