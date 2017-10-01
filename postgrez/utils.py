@@ -1,4 +1,5 @@
-"""Utility functions used throughout the postgrez codebase.
+"""
+Utils module, contains utility functions used throughout the postgrez codebase.
 """
 
 from .logger import create_logger

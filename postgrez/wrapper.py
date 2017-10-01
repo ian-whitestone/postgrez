@@ -1,3 +1,6 @@
+"""
+Wrapper module which contains wrapper functions for common psycopg2 routines.
+"""
 from .postgrez import Connection, Cmd, Load, Export, QUERY_LENGTH
 from .logger import create_logger
 

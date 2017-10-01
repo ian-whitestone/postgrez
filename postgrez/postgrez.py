@@ -1,5 +1,5 @@
-"""Main postgrez module
-Module contains 4 core classes: Connection, Cmd, Export and Load.
+"""
+Main postgrez module, contains 4 core classes: Connection, Cmd, Export and Load.
 """
 
 import psycopg2
@@ -243,7 +243,7 @@ class Load(Connection):
                         (len(data), table_name))
             if null is None:
                 null = 'None'
-                
+
             table_width = len(data[0])
             template_string = "|".join(['{}'] * table_width)
             f = IteratorFile((template_string.format(*x) for x in data))
