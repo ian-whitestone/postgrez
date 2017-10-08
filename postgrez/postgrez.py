@@ -295,6 +295,7 @@ class Load(Connection):
             with open(filename, 'r') as f:
                 log.info('Executing copy query\n%s' % copy_query)
                 self.cursor.copy_expert(copy_query, f)
+            self.conn.commit()
 
         except Exception as e:
             raise PostgrezLoadError("Unable to load file to Postgres. "
