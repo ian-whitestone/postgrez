@@ -17,8 +17,16 @@ log = logging.getLogger(__name__)
 ## number of characters in query to display
 QUERY_LENGTH = 50
 
+## initialization defaults
+DEFAULT_PORT = 5432
+DEFAULT_SETUP = 'default'
+DEFAULT_SETUP_PATH = '~'
+
 class Connection(object):
-    """Class which establishes connections to a PostgresSQL database.
+    """Class which establishes connections to a PostgresSQL database. Users
+    have the option to provide the host, database, username, password and port
+    to connect to. Alternatively, they can utilize their .postgrez configuration
+    file (recommended).
 
     Methods used internally by the class are prefixed with a `_`.
 
@@ -32,24 +40,39 @@ class Connection(object):
         cursor (psycopg2 cursor): psycopg2 cursor object, associated with
             the connection object
     """
-    def __init__(self, setup='default'):
-        """Initialize connection to postgres database.
+    def __init__(self, host=None, database=None, user=None, password=None,
+                    port=DEFAULT_PORT, setup=DEFAULT_SETUP,
+                    setup_path=DEFAULT_SETUP_PATH):
+        """Initialize connection to postgres database. First, we look if a host,
+        database, username and password were provided. If they weren't, we try
+        and read credentials from the .postgrez config file.
+
         Args:
-            setup (str): Name of the db setup to use in ~/.postgrez. If no setup
-                is provided, looks for the 'default' key in ~/.postgrez which
-                specifies the default configuration to use.
+            host (str, optional): Database host url. Defaults to None.
+            database (str, optional): Database name. Defaults to None.
+            user (str, optional): Username. Defaults to None.
+            password (str, optional): Password. Defaults to None.
+            setup (str, optional): Name of the db setup to use in ~/.postgrez.
+                If no setup is provided, looks for the 'default' key in
+                ~/.postgrez which specifies the default configuration to use.
+            setup_path (str, optional): Path to the .postgrez configuration
+                file. Defaults to '~', i.e. your home directory on Mac/Linux.
         """
+        self.host = host
+        self.database = database
+        self.user = user
+        self.password = password
+        self.port = port
         self.setup = setup
-        self.host = None
-        self.database = None
-        self.user = None
-        self.password = None
-        self.port = None
+        self.setup_path = setup_path
         self.conn = None
         self.cursor = None
 
-        ## Fetch attributes from file
-        self._get_attributes()
+        if host is not None and database is not None and user is not None:
+            pass
+        else:
+            ## Fetch attributes from file
+            self._get_attributes()
 
         ## Validate the parsed attributes
         self._validate_attributes()
@@ -66,7 +89,11 @@ class Connection(object):
                 ~/.postgrez file
 
         """
-        yaml_file = os.path.join(os.path.expanduser('~'), '.postgrez')
+        if self.setup_path == '~':
+            yaml_file = os.path.join(os.path.expanduser('~'), '.postgrez')
+        else:
+            yaml_file = os.path.join(self.setup_path, '.postgrez')
+        log.info('Fetching attributes from .postgrez file: %s' % yaml_file)
 
         if os.path.isfile(yaml_file) == False:
             raise PostgrezConfigError('Unable to find ~/.postgrez config file')
@@ -87,17 +114,17 @@ class Connection(object):
         self.password = config[self.setup].get('password', None)
 
     def _validate_attributes(self):
-        """Validate that the minimum required fields were parsed from
-            ~/.postgrez
+        """Validate that the minimum required fields were either supplied or
+            parsed from the .postgrez configuration file.
 
         Raises:
-            PostgrezConfigError: If the minimum attributes were not included
-                in ~/.postgrez.
+            PostgrezConfigError: If the minimum attributes were not supplied or
+            included in ~/.postgrez.
         """
 
         if self.host is None or self.user is None or self.database is None:
             raise PostgrezConfigError('Please provide a host, user and '
-                'database as a minimum in ~/.postgrez. Please visit '
+                'database as a minimum. Please visit '
                 'https://github.com/ian-whitestone/postgrez for details')
 
     def _connected(self):
@@ -164,15 +191,25 @@ class Cmd(Connection):
     """Class which handles execution of queries.
     """
 
-    def __init__(self, setup='default'):
+    def __init__(self, host=None, database=None, user=None, password=None,
+                    port=DEFAULT_PORT, setup=DEFAULT_SETUP,
+                    setup_path=DEFAULT_SETUP_PATH):
         """Initialize connection to postgres database.
 
         Args:
-            setup (str): Name of the db setup to use in ~/.postgrez. If no setup
-                is provided, looks for the 'default' key in ~/.postgrez which
-                specifies the default configuration to use.
+            host (str, optional): Database host url. Defaults to None.
+            database (str, optional): Database name. Defaults to None.
+            user (str, optional): Username. Defaults to None.
+            password (str, optional): Password. Defaults to None.
+            setup (str, optional): Name of the db setup to use in ~/.postgrez.
+                If no setup is provided, looks for the 'default' key in
+                ~/.postgrez which specifies the default configuration to use.
+            setup_path (str, optional): Path to the .postgrez configuration
+                file. Defaults to '~', i.e. your home directory on Mac/Linux.
         """
-        super(Cmd, self).__init__(setup)
+        super(Cmd, self).__init__(host=host, database=database, user=user,
+                                        password=password, port=port,
+                                        setup=setup, setup_path=setup_path)
 
     def execute(self, query, query_vars=None, commit=True, columns=True):
         """Execute the supplied query.
@@ -208,15 +245,25 @@ class Load(Connection):
     """Class which handles loading data functionality.
     """
 
-    def __init__(self, setup='default'):
+    def __init__(self, host=None, database=None, user=None, password=None,
+                    port=DEFAULT_PORT, setup=DEFAULT_SETUP,
+                    setup_path=DEFAULT_SETUP_PATH):
         """Initialize connection to postgres database.
 
         Args:
-            setup (str): Name of the db setup to use in ~/.postgrez. If no setup
-                is provided, looks for the 'default' key in ~/.postgrez which
-                specifies the default configuration to use.
+            host (str, optional): Database host url. Defaults to None.
+            database (str, optional): Database name. Defaults to None.
+            user (str, optional): Username. Defaults to None.
+            password (str, optional): Password. Defaults to None.
+            setup (str, optional): Name of the db setup to use in ~/.postgrez.
+                If no setup is provided, looks for the 'default' key in
+                ~/.postgrez which specifies the default configuration to use.
+            setup_path (str, optional): Path to the .postgrez configuration
+                file. Defaults to '~', i.e. your home directory on Mac/Linux.
         """
-        super(Load, self).__init__(setup)
+        super(Load, self).__init__(host=host, database=database, user=user,
+                                        password=password, port=port,
+                                        setup=setup, setup_path=setup_path)
 
 
     def load_from_object(self, table_name, data, columns=None, null=None):
@@ -304,15 +351,25 @@ class Export(Connection):
     """Class which handles exporting data.
     """
 
-    def __init__(self, setup='default'):
+    def __init__(self, host=None, database=None, user=None, password=None,
+                    port=DEFAULT_PORT, setup=DEFAULT_SETUP,
+                    setup_path=DEFAULT_SETUP_PATH):
         """Initialize connection to postgres database.
 
         Args:
-            setup (str): Name of the db setup to use in ~/.postgrez. If no setup
-                is provided, looks for the 'default' key in ~/.postgrez which
-                specifies the default configuration to use.
+            host (str, optional): Database host url. Defaults to None.
+            database (str, optional): Database name. Defaults to None.
+            user (str, optional): Username. Defaults to None.
+            password (str, optional): Password. Defaults to None.
+            setup (str, optional): Name of the db setup to use in ~/.postgrez.
+                If no setup is provided, looks for the 'default' key in
+                ~/.postgrez which specifies the default configuration to use.
+            setup_path (str, optional): Path to the .postgrez configuration
+                file. Defaults to '~', i.e. your home directory on Mac/Linux.
         """
-        super(Export, self).__init__(setup)
+        super(Export, self).__init__(host=host, database=database, user=user,
+                                        password=password, port=port,
+                                        setup=setup, setup_path=setup_path)
 
 
     def export_to_file(self, query, filename, columns=None, delimiter=',',

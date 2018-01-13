@@ -1,13 +1,16 @@
 """
 Wrapper module which contains wrapper functions for common psycopg2 routines.
 """
-from .postgrez import Connection, Cmd, Load, Export, QUERY_LENGTH
+from .postgrez import Connection, Cmd, Load, Export, QUERY_LENGTH, \
+    DEFAULT_PORT, DEFAULT_SETUP, DEFAULT_SETUP_PATH
 import psycopg2
 import logging
 
 log = logging.getLogger(__name__)
 
-def execute(query, query_vars=None, columns=True, setup='default'):
+def execute(query, query_vars=None, columns=True, host=None, database=None,
+                user=None, password=None, port=DEFAULT_PORT,
+                setup=DEFAULT_SETUP, setup_path=DEFAULT_SETUP_PATH):
     """A wrapper function around Cmd.execute() that returns formatted
     results.
 
@@ -17,9 +20,15 @@ def execute(query, query_vars=None, columns=True, setup='default'):
         query_vars (tuple, list or dict): Variables to be executed with query.
             See http://initd.org/psycopg/docs/usage.html#query-parameters.
         columns (bool): Return column names in results. Defaults to True.
-        setup (str): Name of the db setup to use in ~/.postgrez. If no setup
-            is provided, looks for the 'default' key in ~/.postgrez which
-            specifies the default configuration to use.
+        host (str, optional): Database host url. Defaults to None.
+        database (str, optional): Database name. Defaults to None.
+        user (str, optional): Username. Defaults to None.
+        password (str, optional): Password. Defaults to None.
+        setup (str, optional): Name of the db setup to use in ~/.postgrez.
+            If no setup is provided, looks for the 'default' key in
+            ~/.postgrez which specifies the default configuration to use.
+        setup_path (str, optional): Path to the .postgrez configuration
+            file. Defaults to '~', i.e. your home directory on Mac/Linux.
 
     Returns:
         results (list): Results from query.
@@ -31,7 +40,8 @@ def execute(query, query_vars=None, columns=True, setup='default'):
     """
     results = None
 
-    with Cmd(setup) as c:
+    with Cmd(host=host, database=database, user=user, password=password,
+                setup=setup, setup_path=setup_path) as c:
         c.execute(query, query_vars)
         # no way to check if results were returned other than try-except
         try:
@@ -52,7 +62,9 @@ def execute(query, query_vars=None, columns=True, setup='default'):
 
 
 def load(table_name, filename=None, data=None, delimiter=',',
-            columns=None, quote=None, null=None, header=True, setup='default'):
+            columns=None, quote=None, null=None, header=True, host=None,
+            database=None, user=None, password=None, port=DEFAULT_PORT,
+            setup=DEFAULT_SETUP, setup_path=DEFAULT_SETUP_PATH):
     """A wrapper function around Load.load_from methods. If a filename is
     provided, the records will loaded from that file. Otherwise, records
     will be loaded from the supplied data arg.
@@ -78,15 +90,23 @@ def load(table_name, filename=None, data=None, delimiter=',',
             double-quote.
         header (boolean): Specify True if the first row of the flat file
             contains the column names. Defaults to True.
-        setup (str): Name of the db setup to use in ~/.postgrez. If no setup
-            is provided, looks for the 'default' key in ~/.postgrez which
-            specifies the default configuration to use.
+        host (str, optional): Database host url. Defaults to None.
+        database (str, optional): Database name. Defaults to None.
+        user (str, optional): Username. Defaults to None.
+        password (str, optional): Password. Defaults to None.
+        setup (str, optional): Name of the db setup to use in ~/.postgrez.
+            If no setup is provided, looks for the 'default' key in
+            ~/.postgrez which specifies the default configuration to use.
+        setup_path (str, optional): Path to the .postgrez configuration
+            file. Defaults to '~', i.e. your home directory on Mac/Linux.
+
     """
     if data is None and filename is None:
         log.warning('No filename or data object was supplied. Exiting...')
         return
 
-    with Load(setup) as l:
+    with Load(host=host, database=database, user=user, password=password,
+                setup=setup, setup_path=setup_path) as l:
         if filename:
             l.load_from_file(table_name, filename, delimiter=delimiter,
                                 columns=columns, null=null, quote=quote,
@@ -95,7 +115,9 @@ def load(table_name, filename=None, data=None, delimiter=',',
             l.load_from_object(table_name, data, columns=columns, null=null)
 
 def export(query, filename=None, columns=None, delimiter=',',
-            header=True, null=None, setup='default'):
+            header=True, null=None, host=None, database=None, user=None,
+            password=None, port=DEFAULT_PORT, setup=DEFAULT_SETUP,
+            setup_path=DEFAULT_SETUP_PATH):
     """A wrapper function around Export.export_to methods. If a filename is
     provided, the records will be written to that file. Otherwise, records
     will be returned.
@@ -114,9 +136,15 @@ def export(query, filename=None, columns=None, delimiter=',',
         null (str): Specifies the string that represents a null value.
             Defaults to None, which uses the postgres default of an
             unquoted empty string.
-        setup (str): Name of the db setup to use in ~/.postgrez. If no setup
-            is provided, looks for the 'default' key in ~/.postgrez which
-            specifies the default configuration to use.
+        host (str, optional): Database host url. Defaults to None.
+        database (str, optional): Database name. Defaults to None.
+        user (str, optional): Username. Defaults to None.
+        password (str, optional): Password. Defaults to None.
+        setup (str, optional): Name of the db setup to use in ~/.postgrez.
+            If no setup is provided, looks for the 'default' key in
+            ~/.postgrez which specifies the default configuration to use.
+        setup_path (str, optional): Path to the .postgrez configuration
+            file. Defaults to '~', i.e. your home directory on Mac/Linux.
 
     Returns:
         data (list): If noe filename is provided, records will be returned.
@@ -125,7 +153,8 @@ def export(query, filename=None, columns=None, delimiter=',',
         returns a list of lists where each list is [val1, val2, ...].
     """
     data = None
-    with Export(setup) as e:
+    with Export(host=host, database=database, user=user, password=password,
+                setup=setup, setup_path=setup_path) as e:
         if filename:
             e.export_to_file(query, filename=filename, columns=columns,
                                 delimiter=delimiter, header=header, null=null)
