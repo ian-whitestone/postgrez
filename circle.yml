@@ -10,6 +10,6 @@ test:
   override:
     - python -m pytest --verbose --cov=postgrez
 
-  push:
+  post:
     - coverage report
     - coveralls
