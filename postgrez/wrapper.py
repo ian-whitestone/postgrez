@@ -2,10 +2,10 @@
 Wrapper module which contains wrapper functions for common psycopg2 routines.
 """
 from .postgrez import Connection, Cmd, Load, Export, QUERY_LENGTH
-from .logger import create_logger
 import psycopg2
+import logging
 
-log = create_logger(__name__)
+log = logging.getLogger(__name__)
 
 def execute(query, query_vars=None, columns=True, setup='default'):
     """A wrapper function around Cmd.execute() that returns formatted

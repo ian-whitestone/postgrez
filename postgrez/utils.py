@@ -2,7 +2,7 @@
 Utils module, contains utility functions used throughout the postgrez codebase.
 """
 
-from .logger import create_logger
+import logging
 import sys
 import yaml
 import os
@@ -10,7 +10,7 @@ import io
 import re
 
 
-log = create_logger(__name__)
+log = logging.getLogger(__name__)
 
 def read_yaml(yaml_file):
     """Read a yaml file.

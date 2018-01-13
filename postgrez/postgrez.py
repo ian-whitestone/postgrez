@@ -7,13 +7,12 @@ from .utils import read_yaml, IteratorFile, build_copy_query
 from .exceptions import (PostgrezConfigError, PostgrezConnectionError,
                             PostgrezExecuteError, PostgrezLoadError,
                             PostgrezExportError)
-from .logger import create_logger
 import os
 import sys
 import io
+import logging
 
-
-log = create_logger(__name__)
+log = logging.getLogger(__name__)
 
 ## number of characters in query to display
 QUERY_LENGTH = 50
