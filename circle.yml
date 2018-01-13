@@ -8,4 +8,8 @@ dependencies:
 
 test:
   override:
-    - python -m pytest --verbose
+    - python -m pytest --verbose --cov=postgrez
+
+  push:
+    - coverage report
+    - coveralls
