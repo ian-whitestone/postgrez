@@ -1,8 +1,12 @@
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/ian-whitestone/postgrez/blob/master/LICENSE)
+[![Build](https://img.shields.io/circleci/project/github/ian-whitestone/postgrez.svg)](https://circleci.com/gh/ian-whitestone/postgrez)
+[![Coverage Status](https://coveralls.io/repos/github/ian-whitestone/postgrez/badge.svg)](https://coveralls.io/github/ian-whitestone/postgrez)
+
 <p align="left">
 <img src="./img/postgrez.png" width="645px" height="250px" >
 </p>
 
-I extensively use the [giraffez](https://github.com/capitalone/giraffez) library in my daily work with Teradata. Outside of work, I mostly use PostgreSQL databases. I am consistently copying and pasting a database operations module (a set of psycopg2 wrapper functions) across projects, making various tweaks as I go (and directly violating [DRY](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself)...). As a result, I decided to create a package with similar functionality to giraffez, where the database connection is opened and automatically closed through Python's [with](http://effbot.org/zone/python-with-statement.htm) construct; a much better way for managing resources. Much of the framework for postgrez was based off another Capital One internal package called redfox (not open-source, yet), created by two pretty awesome data scientists, [Ian](https://github.com/theianrobertson) and [Faisal](https://github.com/fdosani), so shoutout to them. 
+I extensively use the [giraffez](https://github.com/capitalone/giraffez) library in my daily work with Teradata. Outside of work, I mostly use PostgreSQL databases. I am consistently copying and pasting a database operations module (a set of psycopg2 wrapper functions) across projects, making various tweaks as I go (and directly violating [DRY](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself)...). As a result, I decided to create a package with similar functionality to giraffez, where the database connection is opened and automatically closed through Python's [with](http://effbot.org/zone/python-with-statement.htm) construct; a much better way for managing resources. Much of the framework for postgrez was based off another Capital One internal package called redfox (not open-source, yet), created by two pretty awesome data scientists, [Ian](https://github.com/theianrobertson) and [Faisal](https://github.com/fdosani), so shoutout to them.
 
 The package has functionality for executing queries, uploading data from a Python object or a local flat file, and exporting data locally or into memory. Emphasis on the **ez**.
 
