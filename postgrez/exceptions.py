@@ -24,7 +24,7 @@ class PostgrezConnectionError(Postgrez):
 
 
 class PostgrezExecuteError(Postgrez):
-    """Raised when there is an error running the Cmd.execute() function.
+    """Raised when there is an error fetching results from the cursor..
     """
 
 

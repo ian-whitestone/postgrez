@@ -21,19 +21,12 @@ def read_yaml(yaml_file):
     Returns:
         data (dict): Dictionary of yaml_file contents. None is returned if an
         error occurs while reading.
-
-    Raises:
-        Exception: If the yaml_file cannot be opened.
     """
 
     data = None
-    try:
-        with open(yaml_file) as f:
-            # use safe_load instead load
-            data = yaml.safe_load(f)
-    except Exception as e:
-        log.error('Unable to read file %s. Error: %s' % (yaml_file,e))
-
+    with open(yaml_file) as f:
+        # use safe_load instead load
+        data = yaml.safe_load(f)
     return data
 
 
@@ -69,46 +62,41 @@ def build_copy_query(mode, query, columns=None, delimiter=',', header=True,
     Returns:
         copy_query (str): Formatted query to run in copy_expert()
 
-    Raises:
-        Exception: If an error occurs while building hte query.
     """
-    try:
-        log.info('Building copy query with mode: %s' % mode)
+    log.info('Building copy query with mode: %s' % mode)
+    if columns:
+        columns = '(' + ','.join(columns) + ')'
+
+    if mode.lower() == 'load':
+        copy_mode = 'FROM STDIN'
+    elif mode.lower() == 'export':
+        copy_mode = 'TO STDOUT'
+    else:
+        log.error("Mode must be 'load' or 'export'. Exiting..")
+        return
+
+    ## check if provided query is a query, or just a table name
+    if re.match('\s*select', query, re.IGNORECASE):
         if columns:
-            columns = '(' + ','.join(columns) + ')'
+            log.warning('If a query is passed in the query arg '
+                        'instead of a tablename, columns must be '
+                        'specified in the query itself')
+            columns = None
+        query = '(' + query + ')'
 
-        if mode.lower() == 'load':
-            copy_mode = 'FROM STDIN'
-        elif mode.lower() == 'export':
-            copy_mode = 'TO STDOUT'
-        else:
-            log.error("Mode must be 'load' or 'export'. Exiting..")
-            return
+    copy_query = "COPY {0} {1} {2} WITH DELIMITER '{3}' " \
+                    " CSV {4} {5} {6}"
 
-        ## check if provided query is a query, or just a table name
-        if re.match('\s*select', query, re.IGNORECASE):
-            if columns:
-                log.warning('If a query is passed in the query arg '
-                            'instead of a tablename, columns must be '
-                            'specified in the query itself')
-                columns = None
-            query = '(' + query + ')'
-
-        copy_query = "COPY {0} {1} {2} WITH DELIMITER '{3}' " \
-                        " CSV {4} {5} {6}"
-
-        copy_query = copy_query.format(
-            query,
-            copy_mode,
-            (columns if columns else ''),
-            delimiter,
-            ('HEADER' if header else ''),
-            ('QUOTE ' + "'{}'".format(quote) if quote else ''),
-            ('NULL ' + "'{}'".format(null) if null else '')
-            )
-        return copy_query
-    except Exception as e:
-        raise Exception('Unable to build query. Error: %s' % (e))
+    copy_query = copy_query.format(
+        query,
+        copy_mode,
+        (columns if columns else ''),
+        delimiter,
+        ('HEADER' if header else ''),
+        ('QUOTE ' + "'{}'".format(quote) if quote else ''),
+        ('NULL ' + "'{}'".format(null) if null else '')
+        )
+    return copy_query
 
 
 class IteratorFile(io.TextIOBase):
