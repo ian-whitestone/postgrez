@@ -12,7 +12,7 @@ import sys
 import io
 import logging
 
-log = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 ## number of characters in query to display
 QUERY_LENGTH = 50
@@ -68,9 +68,7 @@ class Connection(object):
         self.conn = None
         self.cursor = None
 
-        if host is not None and database is not None and user is not None:
-            pass
-        else:
+        if host is None and database is None and user is None:
             ## Fetch attributes from file
             self._get_attributes()
 
@@ -93,7 +91,7 @@ class Connection(object):
             yaml_file = os.path.join(os.path.expanduser('~'), '.postgrez')
         else:
             yaml_file = os.path.join(self.setup_path, '.postgrez')
-        log.info('Fetching attributes from .postgrez file: %s' % yaml_file)
+        LOGGER.info('Fetching attributes from .postgrez file: %s' % yaml_file)
 
         if os.path.isfile(yaml_file) == False:
             raise PostgrezConfigError('Unable to find ~/.postgrez config file')
@@ -105,6 +103,7 @@ class Connection(object):
                                         'file' % self.setup)
 
         if self.setup == 'default':
+            # grab the default setup key
             self.setup = config[self.setup]
 
         self.host = config[self.setup].get('host', None)
@@ -134,43 +133,27 @@ class Connection(object):
             connect_status (bool): True of a psycopg2 connection or cursor
                 object exists.
         """
-        return (True if self.conn or self.cursor else False)
+        return (True if self.conn.closed == 1 else False)
 
     def _connect(self):
         """Create a connection to a PostgreSQL database.
-
-        Raises:
-            Exception: If there is a problem creating a connection.
         """
-        try:
-            log.info('Establishing connection to %s database' % self.database)
-            self.conn = psycopg2.connect(host=self.host,
-                                    port=self.port,
-                                    database=self.database,
-                                    user=self.user,
-                                    password=self.password)
-            self.cursor = self.conn.cursor()
-        except Exception as e:
-            log.error('Error connecting to database. Error: %s', e)
-            raise
+        LOGGER.info('Establishing connection to %s database' % self.database)
+        self.conn = psycopg2.connect(
+            host=self.host,
+            port=self.port,
+            database=self.database,
+            user=self.user,
+            password=self.password
+            )
+        self.cursor = self.conn.cursor()
 
     def _disconnect(self):
-        """Create a connection to a PostgreSQL database.
-
-        Raises:
-            Exception: If there is a problem creating a connection.
+        """Close connection
         """
-        log.info('Attempting to disconnect from database %s' % self.database)
-        try:
-            self.cursor.close()
-        except Exception as e:
-            log.error('Error closing cursor. Error: %s', e)
-            raise
-        try:
-            self.conn.close()
-        except Exception as e:
-            log.error('Error closing connection. Error: %s', e)
-            raise
+        LOGGER.debug('Attempting to disconnect from database %s' % self.database)
+        self.cursor.close()
+        self.conn.close()
 
     def __enter__(self):
         return self
@@ -179,39 +162,17 @@ class Connection(object):
         """Close the cursor and connection objects if they have been created.
         This code is automatically executed after the with statement is
         completed or if any error arises during the process.
-        Ref: https://stackoverflow.com/questions/1984325/explaining-pythons-enter-and-exit
+        Reference: https://stackoverflow.com/questions/1984325/explaining-pythons-enter-and-exit
         """
         if self._connected():
-            log.info("Attempting to close connection ...")
             self._disconnect()
-            log.info("Connection closed")
 
 
 class Cmd(Connection):
     """Class which handles execution of queries.
     """
 
-    def __init__(self, host=None, database=None, user=None, password=None,
-                    port=DEFAULT_PORT, setup=DEFAULT_SETUP,
-                    setup_path=DEFAULT_SETUP_PATH):
-        """Initialize connection to postgres database.
-
-        Args:
-            host (str, optional): Database host url. Defaults to None.
-            database (str, optional): Database name. Defaults to None.
-            user (str, optional): Username. Defaults to None.
-            password (str, optional): Password. Defaults to None.
-            setup (str, optional): Name of the db setup to use in ~/.postgrez.
-                If no setup is provided, looks for the 'default' key in
-                ~/.postgrez which specifies the default configuration to use.
-            setup_path (str, optional): Path to the .postgrez configuration
-                file. Defaults to '~', i.e. your home directory on Mac/Linux.
-        """
-        super(Cmd, self).__init__(host=host, database=database, user=user,
-                                        password=password, port=port,
-                                        setup=setup, setup_path=setup_path)
-
-    def execute(self, query, query_vars=None, commit=True, columns=True):
+    def execute(self, query, query_vars=None, commit=True):
         """Execute the supplied query.
 
         Args:
@@ -223,48 +184,15 @@ class Cmd(Connection):
                 Defaults to True.
 
         Raises:
-            PostgrezConnectionError: If no connection has been established.
-            PostgrezExecuteError: If any error occurs during execution of query.
+            PostgrezConnectionError: If the connection has been closed.
         """
         if self._connected() == False:
-            raise PostgrezConnectionError('No connection has been established')
+            raise PostgrezConnectionError('Connection has been closed')
 
-        log.info('Executing query %s...' % query[0:QUERY_LENGTH].strip())
-        try:
-            self.cursor.execute(query, vars=query_vars)
-
-            if commit:
-                self.conn.commit()
-
-        except Exception as e:
-            raise PostgrezExecuteError('Unable to execute query %s due to '
-                         'Error: %s' % (query[0:QUERY_LENGTH], e))
-
-
-class Load(Connection):
-    """Class which handles loading data functionality.
-    """
-
-    def __init__(self, host=None, database=None, user=None, password=None,
-                    port=DEFAULT_PORT, setup=DEFAULT_SETUP,
-                    setup_path=DEFAULT_SETUP_PATH):
-        """Initialize connection to postgres database.
-
-        Args:
-            host (str, optional): Database host url. Defaults to None.
-            database (str, optional): Database name. Defaults to None.
-            user (str, optional): Username. Defaults to None.
-            password (str, optional): Password. Defaults to None.
-            setup (str, optional): Name of the db setup to use in ~/.postgrez.
-                If no setup is provided, looks for the 'default' key in
-                ~/.postgrez which specifies the default configuration to use.
-            setup_path (str, optional): Path to the .postgrez configuration
-                file. Defaults to '~', i.e. your home directory on Mac/Linux.
-        """
-        super(Load, self).__init__(host=host, database=database, user=user,
-                                        password=password, port=port,
-                                        setup=setup, setup_path=setup_path)
-
+        LOGGER.info('Executing query %s...' % query[0:QUERY_LENGTH].strip())
+        self.cursor.execute(query, vars=query_vars)
+        if commit:
+            self.conn.commit()
 
     def load_from_object(self, table_name, data, columns=None, null=None):
         """Load data into a Postgres table from a python list.
@@ -282,10 +210,11 @@ class Load(Connection):
                 element as missing and inject a Null value into the database for
                 the corresponding column.
         Raises:
-            PostgrezLoadError: If an error occurs while loading.
+            PostgrezLoadError: If an error occurs while building the iterator
+                file.
         """
         try:
-            log.info('Attempting to load %s records into table %s' %
+            LOGGER.info('Attempting to load %s records into table %s' %
                         (len(data), table_name))
             if null is None:
                 null = 'None'
@@ -293,14 +222,13 @@ class Load(Connection):
             table_width = len(data[0])
             template_string = "|".join(['{}'] * table_width)
             f = IteratorFile((template_string.format(*x) for x in data))
-            self.cursor.copy_from(f, table_name, sep="|", null=null,
-                                    columns=columns)
-            self.conn.commit()
-
         except Exception as e:
             raise PostgrezLoadError("Unable to load data to Postgres. "
                 "Error: %s" % e)
 
+            self.cursor.copy_from(f, table_name, sep="|", null=null,
+                                    columns=columns)
+            self.conn.commit()
 
     def load_from_file(self, table_name, filename, header=True, delimiter=',',
                         columns=None, quote=None, null=None):
@@ -328,49 +256,16 @@ class Load(Connection):
 
                 it will treat the first element as missing and inject a Null
                 value into the database for the corresponding column.
-        Raises:
-            PostgrezLoadError: If an error occurs while loading.
         """
-        try:
-            log.info('Attempting to load file %s  into table %s' %
-                        (filename, table_name))
-
-            copy_query = build_copy_query('load', table_name, header=header,
-                                        columns=columns, delimiter=delimiter,
-                                        quote=quote, null=null)
-            with open(filename, 'r') as f:
-                log.info('Executing copy query\n%s' % copy_query)
-                self.cursor.copy_expert(copy_query, f)
-            self.conn.commit()
-
-        except Exception as e:
-            raise PostgrezLoadError("Unable to load file to Postgres. "
-                "Error: %s" % e)
-
-class Export(Connection):
-    """Class which handles exporting data.
-    """
-
-    def __init__(self, host=None, database=None, user=None, password=None,
-                    port=DEFAULT_PORT, setup=DEFAULT_SETUP,
-                    setup_path=DEFAULT_SETUP_PATH):
-        """Initialize connection to postgres database.
-
-        Args:
-            host (str, optional): Database host url. Defaults to None.
-            database (str, optional): Database name. Defaults to None.
-            user (str, optional): Username. Defaults to None.
-            password (str, optional): Password. Defaults to None.
-            setup (str, optional): Name of the db setup to use in ~/.postgrez.
-                If no setup is provided, looks for the 'default' key in
-                ~/.postgrez which specifies the default configuration to use.
-            setup_path (str, optional): Path to the .postgrez configuration
-                file. Defaults to '~', i.e. your home directory on Mac/Linux.
-        """
-        super(Export, self).__init__(host=host, database=database, user=user,
-                                        password=password, port=port,
-                                        setup=setup, setup_path=setup_path)
-
+        LOGGER.info('Attempting to load file %s  into table %s' %
+                    (filename, table_name))
+        copy_query = build_copy_query('load', table_name, header=header,
+                                    columns=columns, delimiter=delimiter,
+                                    quote=quote, null=null)
+        with open(filename, 'r') as f:
+            LOGGER.info('Executing copy query\n%s' % copy_query)
+            self.cursor.copy_expert(copy_query, f)
+        self.conn.commit()
 
     def export_to_file(self, query, filename, columns=None, delimiter=',',
                 header=True, null=None):
@@ -390,24 +285,16 @@ class Export(Connection):
             null (str): Specifies the string that represents a null value.
                 Defaults to None, which uses the postgres default of an
                 unquoted empty string.
-
-        Raises:
-            PostgrezExportError: If an error occurs while exporting to the file.
         """
 
         copy_query = build_copy_query('export',query, columns=columns,
                                             delimiter=delimiter,
                                             header=header, null=null)
-        try:
-            log.info('Running copy_expert with\n%s\nOutputting results to %s' %
-                        (copy_query, filename))
-            with open(filename, 'w') as f:
-                log.info('Executing copy query\n%s' % copy_query)
-                self.cursor.copy_expert(copy_query, f)
-        except Exception as e:
-            raise PostgrezExportError('Unable to export to file %s. Error: %s'
-                    % (filename, e))
-
+        LOGGER.info('Running copy_expert with\n%s\nOutputting results to %s' %
+                    (copy_query, filename))
+        with open(filename, 'w') as f:
+            LOGGER.info('Executing copy query\n%s' % copy_query)
+            self.cursor.copy_expert(copy_query, f)
 
     def export_to_object(self, query, columns=None, delimiter=',', header=True,
                             null=None):
@@ -438,7 +325,7 @@ class Export(Connection):
                                             header=header, null=null)
         data = None
         try:
-            log.info('Running copy_expert with with\n%s\nOutputting results to '
+            LOGGER.info('Running copy_expert with with\n%s\nOutputting results to '
                      'list.' % copy_query)
             # stream output to local object
             text_stream = io.StringIO()

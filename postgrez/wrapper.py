@@ -3,6 +3,7 @@ Wrapper module which contains wrapper functions for common psycopg2 routines.
 """
 from .postgrez import Connection, Cmd, Load, Export, QUERY_LENGTH, \
     DEFAULT_PORT, DEFAULT_SETUP, DEFAULT_SETUP_PATH
+from .exceptions import PostgrezExecuteError
 import psycopg2
 import logging
 
@@ -105,7 +106,7 @@ def load(table_name, filename=None, data=None, delimiter=',',
         log.warning('No filename or data object was supplied. Exiting...')
         return
 
-    with Load(host=host, database=database, user=user, password=password,
+    with Cmd(host=host, database=database, user=user, password=password,
                 setup=setup, setup_path=setup_path) as l:
         if filename:
             l.load_from_file(table_name, filename, delimiter=delimiter,
@@ -153,7 +154,7 @@ def export(query, filename=None, columns=None, delimiter=',',
         returns a list of lists where each list is [val1, val2, ...].
     """
     data = None
-    with Export(host=host, database=database, user=user, password=password,
+    with Cmd(host=host, database=database, user=user, password=password,
                 setup=setup, setup_path=setup_path) as e:
         if filename:
             e.export_to_file(query, filename=filename, columns=columns,
