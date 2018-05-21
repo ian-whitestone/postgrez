@@ -12,7 +12,7 @@ import sys
 import io
 import logging
 
-log = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 ## number of characters in query to display
 QUERY_LENGTH = 50
@@ -91,7 +91,7 @@ class Connection(object):
             yaml_file = os.path.join(os.path.expanduser('~'), '.postgrez')
         else:
             yaml_file = os.path.join(self.setup_path, '.postgrez')
-        log.info('Fetching attributes from .postgrez file: %s' % yaml_file)
+        LOGGER.info('Fetching attributes from .postgrez file: %s' % yaml_file)
 
         if os.path.isfile(yaml_file) == False:
             raise PostgrezConfigError('Unable to find ~/.postgrez config file')
@@ -138,18 +138,20 @@ class Connection(object):
     def _connect(self):
         """Create a connection to a PostgreSQL database.
         """
-        log.info('Establishing connection to %s database' % self.database)
-        self.conn = psycopg2.connect(host=self.host,
-                                port=self.port,
-                                database=self.database,
-                                user=self.user,
-                                password=self.password)
+        LOGGER.info('Establishing connection to %s database' % self.database)
+        self.conn = psycopg2.connect(
+            host=self.host,
+            port=self.port,
+            database=self.database,
+            user=self.user,
+            password=self.password
+            )
         self.cursor = self.conn.cursor()
 
     def _disconnect(self):
         """Close connection
         """
-        log.debug('Attempting to disconnect from database %s' % self.database)
+        LOGGER.debug('Attempting to disconnect from database %s' % self.database)
         self.cursor.close()
         self.conn.close()
 
@@ -187,14 +189,10 @@ class Cmd(Connection):
         if self._connected() == False:
             raise PostgrezConnectionError('Connection has been closed')
 
-        log.info('Executing query %s...' % query[0:QUERY_LENGTH].strip())
+        LOGGER.info('Executing query %s...' % query[0:QUERY_LENGTH].strip())
         self.cursor.execute(query, vars=query_vars)
         if commit:
             self.conn.commit()
-
-class Load(Connection):
-    """Class which handles loading data functionality.
-    """
 
     def load_from_object(self, table_name, data, columns=None, null=None):
         """Load data into a Postgres table from a python list.
@@ -216,7 +214,7 @@ class Load(Connection):
                 file.
         """
         try:
-            log.info('Attempting to load %s records into table %s' %
+            LOGGER.info('Attempting to load %s records into table %s' %
                         (len(data), table_name))
             if null is None:
                 null = 'None'
@@ -231,8 +229,6 @@ class Load(Connection):
             self.cursor.copy_from(f, table_name, sep="|", null=null,
                                     columns=columns)
             self.conn.commit()
-
-
 
     def load_from_file(self, table_name, filename, header=True, delimiter=',',
                         columns=None, quote=None, null=None):
@@ -261,19 +257,15 @@ class Load(Connection):
                 it will treat the first element as missing and inject a Null
                 value into the database for the corresponding column.
         """
-        log.info('Attempting to load file %s  into table %s' %
+        LOGGER.info('Attempting to load file %s  into table %s' %
                     (filename, table_name))
         copy_query = build_copy_query('load', table_name, header=header,
                                     columns=columns, delimiter=delimiter,
                                     quote=quote, null=null)
         with open(filename, 'r') as f:
-            log.info('Executing copy query\n%s' % copy_query)
+            LOGGER.info('Executing copy query\n%s' % copy_query)
             self.cursor.copy_expert(copy_query, f)
         self.conn.commit()
-
-class Export(Connection):
-    """Class which handles exporting data.
-    """
 
     def export_to_file(self, query, filename, columns=None, delimiter=',',
                 header=True, null=None):
@@ -298,10 +290,10 @@ class Export(Connection):
         copy_query = build_copy_query('export',query, columns=columns,
                                             delimiter=delimiter,
                                             header=header, null=null)
-        log.info('Running copy_expert with\n%s\nOutputting results to %s' %
+        LOGGER.info('Running copy_expert with\n%s\nOutputting results to %s' %
                     (copy_query, filename))
         with open(filename, 'w') as f:
-            log.info('Executing copy query\n%s' % copy_query)
+            LOGGER.info('Executing copy query\n%s' % copy_query)
             self.cursor.copy_expert(copy_query, f)
 
     def export_to_object(self, query, columns=None, delimiter=',', header=True,
@@ -333,7 +325,7 @@ class Export(Connection):
                                             header=header, null=null)
         data = None
         try:
-            log.info('Running copy_expert with with\n%s\nOutputting results to '
+            LOGGER.info('Running copy_expert with with\n%s\nOutputting results to '
                      'list.' % copy_query)
             # stream output to local object
             text_stream = io.StringIO()

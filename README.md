@@ -76,11 +76,11 @@ with postgrez.Cmd(setup='my_local_db') as c:
     c.execute(query=query, query_vars=('1900-01-01', 5))
 
 # Select and retrieve resultset
-with postgrez.Cmd(setup='my_local_db') as c:
+with postgrez.Cmd(setup='my_local_db') as cmd:
     query = 'select * from my_table limit 10'
-    c.execute(query=query)
-    resultset = c.cursor.fetchall()
-    cols = [desc[0] for desc in c.cursor.description]
+    cmd.execute(query=query)
+    resultset = cmd.cursor.fetchall()
+    cols = [desc[0] for desc in cmd.cursor.description]
 
     # return the data as a list of dicts [{col1:val1, col2: val2, ..}, ..]
     results = [{cols[i]:value for i, value in enumerate(row)}
@@ -88,9 +88,9 @@ with postgrez.Cmd(setup='my_local_db') as c:
 print (results)
 
 # If a default setup was specified in ~/.postgrez, the setup variable can be omitted
-with postgrez.Cmd() as c:
+with postgrez.Cmd() as cmd:
     query = 'update my_table set snap_dt=current_date'
-    c.execute(query=query)
+    cmd.execute(query=query)
 ```
 
 ### Loading Data
@@ -101,17 +101,17 @@ postgrez comes with two options for loading: loading from a Python list, or a lo
 
 # load Python list into my_table
 data = [(1, 2, 3), (4, 5, 6)]
-with postgrez.Load() as l:
-    l.load_from_object(table_name='my_table', data=data)
+with postgrez.Cmd() as cmd:
+    cmd.load_from_object(table_name='my_table', data=data)
 
 # load csv into my_table
-with postgrez.Load() as l:
-    l.load_from_file(table_name='my_table', filename='my_file.csv')
+with postgrez.Cmd() as cmd:
+    cmd.load_from_file(table_name='my_table', filename='my_file.csv')
 
 # load other flat file into my_table
-with postgrez.Load() as l:
-    l.load_from_file(table_name='my_table', filename='my_file.tsv',
-                      delimiter='|')
+with postgrez.Cmd() as cmd:
+    cmd.load_from_file(table_name='my_table', filename='my_file.tsv',
+                       delimiter='|')
 
 ```
 
@@ -121,14 +121,14 @@ In the examples shown above, the columns in the files and data object are expect
 
 # load Python list into my_table
 data = [(3, 2, 1), (6, 5, 4)]
-with postgrez.Load('my_local_db') as l:
-    l.load_to_object(table_name='my_table', data=data,
-                      columns=['col3','col2','col1'])
+with postgrez.Cmd('my_local_db') as cmd:
+    cmd.load_from_object(table_name='my_table', data=data,
+                         columns=['col3','col2','col1'])
 
 data = [(2, 3, 1), (5, 6, 4)]
-with postgrez.Load('my_local_db') as l:
-    l.load_to_object(table_name='my_table', data=data,
-                      columns=['col2','col3','col1'])
+with postgrez.Cmd('my_local_db') as cmd:
+    cmd.load_from_object(table_name='my_table', data=data,
+                         columns=['col2','col3','col1'])
 
 ```
 
@@ -141,23 +141,22 @@ Similar to loading data, postgrez comes with two options for exporting. Records 
 import postgrez
 
 # export my_table to local file
-with postgrez.Export() as e:
-  e.export_to_file(query='my_table', filename='results.csv')
+with postgrez.Cmd() as cmd:
+  cmd.export_to_file(query='my_table', filename='results.csv')
 
 # export the snap_dt column of my_table to local file
-with postgrez.Export() as e:
-  e.export_to_file(query='my_table', filename='results.csv',
+with postgrez.Cmd() as cmd:
+  cmd.export_to_file(query='my_table', filename='results.csv',
                     columns=['snap_dt'])
 
 # export a subset of my_table to local file
-with postgrez.Export() as e:
-  e.export_to_file(query="select * my_table where snap_dt='2017-01-01'",
+with postgrez.Cmd() as cmd:
+  cmd.export_to_file(query="select * my_table where snap_dt='2017-01-01'",
                     filename='results.csv')
 
 # export my_table to a Python variable
-with postgrez.Export() as e:
-  data = e.export_to_object(query="my_table")
-print (data)
+with postgrez.Cmd() as cmd:
+  data = cmd.export_to_object(query="my_table")
 ```
 
 Note: Exporting data into Python using the `Export.export_to_object()` method provides no performance increase over running a `select * from my_table` with the `Cmd.execute()` method.
@@ -233,5 +232,4 @@ postgrez.export(query="my_table", filename=results.csv,
 
 # export my_table to a Python variable
 data = postgrez.export(query="my_table")
-print (data)
 ```
