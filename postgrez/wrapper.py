@@ -42,18 +42,18 @@ def execute(query, query_vars=None, columns=True, host=None, database=None,
     results = None
 
     with Cmd(host=host, database=database, user=user, password=password,
-                setup=setup, setup_path=setup_path) as c:
-        c.execute(query, query_vars)
+                setup=setup, setup_path=setup_path) as cmd:
+        cmd.execute(query, query_vars)
         # no way to check if results were returned other than try-except
         try:
-            results = c.cursor.fetchall()
-        except psycopg2.ProgrammingError as e:
+            results = cmd.cursor.fetchall()
+        except psycopg2.ProgrammingError as err:
             # this error is raised when there are no results to fetch
             pass
 
         try:
             if columns and results:
-                cols = [desc[0] for desc in c.cursor.description]
+                cols = [desc[0] for desc in cmd.cursor.description]
                 results = [{cols[i]:value for i, value in enumerate(row)}
                         for row in results]
         except Exception as e:
@@ -107,13 +107,13 @@ def load(table_name, filename=None, data=None, delimiter=',',
         return
 
     with Cmd(host=host, database=database, user=user, password=password,
-                setup=setup, setup_path=setup_path) as l:
+                setup=setup, setup_path=setup_path) as cmd:
         if filename:
-            l.load_from_file(table_name, filename, delimiter=delimiter,
+            cmd.load_from_file(table_name, filename, delimiter=delimiter,
                                 columns=columns, null=null, quote=quote,
                                 header=header)
         else:
-            l.load_from_object(table_name, data, columns=columns, null=null)
+            cmd.load_from_object(table_name, data, columns=columns, null=null)
 
 def export(query, filename=None, columns=None, delimiter=',',
             header=True, null=None, host=None, database=None, user=None,
@@ -155,11 +155,11 @@ def export(query, filename=None, columns=None, delimiter=',',
     """
     data = None
     with Cmd(host=host, database=database, user=user, password=password,
-                setup=setup, setup_path=setup_path) as e:
+                setup=setup, setup_path=setup_path) as cmd:
         if filename:
-            e.export_to_file(query, filename=filename, columns=columns,
+            cmd.export_to_file(query, filename=filename, columns=columns,
                                 delimiter=delimiter, header=header, null=null)
         else:
-            data = e.export_to_object(query, columns=columns, null=null,
+            data = cmd.export_to_object(query, columns=columns, null=null,
                                         delimiter=delimiter, header=header)
     return data

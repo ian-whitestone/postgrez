@@ -1,5 +1,5 @@
 """
-Main postgrez module, contains 4 core classes: Connection, Cmd, Export and Load.
+Main postgrez module, containing 2 core classes: Connection and Cmd.
 """
 
 import psycopg2
@@ -55,8 +55,9 @@ class Connection(object):
             setup (str, optional): Name of the db setup to use in ~/.postgrez.
                 If no setup is provided, looks for the 'default' key in
                 ~/.postgrez which specifies the default configuration to use.
-            setup_path (str, optional): Path to the .postgrez configuration
-                file. Defaults to '~', i.e. your home directory on Mac/Linux.
+            setup_path (str, optional): Path to the directory containing the
+                `.postgrez` configuration file.
+                Defaults to your home directory `'~'`.
         """
         self.host = host
         self.database = database
@@ -107,7 +108,7 @@ class Connection(object):
             self.setup = config[self.setup]
 
         self.host = config[self.setup].get('host', None)
-        self.port = config[self.setup].get('port', 5432)
+        self.port = config[self.setup].get('port', self.port)
         self.database = config[self.setup].get('database', None)
         self.user = config[self.setup].get('user', None)
         self.password = config[self.setup].get('password', None)
