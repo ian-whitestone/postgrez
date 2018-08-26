@@ -133,7 +133,7 @@ class Connection(object):
             connect_status (bool): True of a psycopg2 connection or cursor
                 object exists.
         """
-        return (True if self.conn.closed == 1 else False)
+        return (True if self.conn.closed == 0 else False)
 
     def _connect(self):
         """Create a connection to a PostgreSQL database.
