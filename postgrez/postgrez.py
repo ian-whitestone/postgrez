@@ -1,5 +1,5 @@
 """
-Main postgrez module, contains 4 core classes: Connection, Cmd, Export and Load.
+Main postgrez module
 """
 
 import psycopg2
