@@ -1,7 +1,7 @@
 """
 Wrapper module which contains wrapper functions for common psycopg2 routines.
 """
-from .postgrez import Connection, Cmd, Load, Export, QUERY_LENGTH, \
+from .postgrez import Connection, Cmd, QUERY_LENGTH, \
     DEFAULT_PORT, DEFAULT_SETUP, DEFAULT_SETUP_PATH
 from .exceptions import PostgrezExecuteError
 import psycopg2
