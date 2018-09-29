@@ -2,7 +2,10 @@
 Main postgrez module
 """
 
-import psycopg2
+import warnings
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    import psycopg2
 from .utils import read_yaml, IteratorFile, build_copy_query
 from .exceptions import (PostgrezConfigError, PostgrezConnectionError,
                             PostgrezExecuteError, PostgrezLoadError,
