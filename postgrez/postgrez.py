@@ -196,7 +196,7 @@ class Cmd(Connection):
         self.cursor.execute(query, vars=query_vars)
         if commit:
             self.conn.commit()
-
+            
     def load_from_object(self, table_name, data, columns=None, null=None):
         """Load data into a Postgres table from a python list.
 
@@ -227,11 +227,11 @@ class Cmd(Connection):
             f = IteratorFile((template_string.format(*x) for x in data))
         except Exception as e:
             raise PostgrezLoadError("Unable to load data to Postgres. "
-                "Error: %s" % e)
+                                    "Error: %s" % e)
 
-            self.cursor.copy_from(f, table_name, sep="|", null=null,
-                                    columns=columns)
-            self.conn.commit()
+        self.cursor.copy_from(f, table_name, sep="|", null=null,
+                                columns=columns)
+        self.conn.commit()
 
     def load_from_file(self, table_name, filename, header=True, delimiter=',',
                         columns=None, quote=None, null=None):
